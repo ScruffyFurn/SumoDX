@@ -1,13 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest">
 
-  <Identity Name="b4369a30-e75a-463a-a709-28bd636e1bc8"
-            Publisher="CN=Michael"
+  <Identity Name="de9fb97e-6480-45d2-84bc-f95e6f67c6ca"
+            Publisher="CN=Mickey"
             Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>SumoDX_Step1</DisplayName>
-    <PublisherDisplayName>Michael</PublisherDisplayName>
+    <DisplayName>SumoDX_Module3</DisplayName>
+    <PublisherDisplayName>Mickey</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -23,12 +23,12 @@
   <Applications>
     <Application Id="App"
         Executable="$targetnametoken$.exe"
-        EntryPoint="SumoDX_Step1.App">
+        EntryPoint="SumoDX_Module3.App">
         <VisualElements
-            DisplayName="SumoDX_Step1"
+            DisplayName="SumoDX_Module3"
             Logo="Assets\Logo.png"
             SmallLogo="Assets\SmallLogo.png"
-            Description="SumoDX_Step1"
+            Description="SumoDX_Module3"
             ForegroundText="light"
             BackgroundColor="#464646">
             <DefaultTile ShowName="allLogos" />

@@ -1,21 +1,21 @@
 ﻿#include "pch.h"
-#include "SumoDX_Step1Main.h"
+#include "SumoDX_Module3Main.h"
 #include "Common\DirectXHelper.h"
 
-using namespace SumoDX_Step1;
+using namespace SumoDX_Module3;
 using namespace Windows::Foundation;
 using namespace Windows::System::Threading;
 using namespace Concurrency;
 
 // Loads and initializes application assets when the application is loaded.
-SumoDX_Step1Main::SumoDX_Step1Main(const std::shared_ptr<DX::DeviceResources>& deviceResources) :
-	m_deviceResources(deviceResources), m_pointerLocationX(0.0f)
+SumoDX_Module3Main::SumoDX_Module3Main(const std::shared_ptr<DX::DeviceResources>& deviceResources) :
+	m_deviceResources(deviceResources)
 {
 	// Register to be notified if the Device is lost or recreated
 	m_deviceResources->RegisterDeviceNotify(this);
 
 	// TODO: Replace this with your app's content initialization.
-	m_sceneRenderer = std::unique_ptr<Sample3DSceneRenderer>(new Sample3DSceneRenderer(m_deviceResources));
+	//m_sceneRenderer = std::unique_ptr<Sample3DSceneRenderer>(new Sample3DSceneRenderer(m_deviceResources));
 
 	m_fpsTextRenderer = std::unique_ptr<SampleFpsTextRenderer>(new SampleFpsTextRenderer(m_deviceResources));
 
@@ -27,75 +27,34 @@ SumoDX_Step1Main::SumoDX_Step1Main(const std::shared_ptr<DX::DeviceResources>& d
 	*/
 }
 
-SumoDX_Step1Main::~SumoDX_Step1Main()
+SumoDX_Module3Main::~SumoDX_Module3Main()
 {
 	// Deregister device notification
 	m_deviceResources->RegisterDeviceNotify(nullptr);
 }
 
 // Updates application state when the window size changes (e.g. device orientation change)
-void SumoDX_Step1Main::CreateWindowSizeDependentResources() 
+void SumoDX_Module3Main::CreateWindowSizeDependentResources() 
 {
 	// TODO: Replace this with the size-dependent initialization of your app's content.
 	m_sceneRenderer->CreateWindowSizeDependentResources();
 }
 
-void SumoDX_Step1Main::StartRenderLoop()
-{
-	// If the animation render loop is already running then do not start another thread.
-	if (m_renderLoopWorker != nullptr && m_renderLoopWorker->Status == AsyncStatus::Started)
-	{
-		return;
-	}
-
-	// Create a task that will be run on a background thread.
-	auto workItemHandler = ref new WorkItemHandler([this](IAsyncAction ^ action)
-	{
-		// Calculate the updated frame and render once per vertical blanking interval.
-		while (action->Status == AsyncStatus::Started)
-		{
-			critical_section::scoped_lock lock(m_criticalSection);
-			Update();
-			if (Render())
-			{
-				m_deviceResources->Present();
-			}
-		}
-	});
-
-	// Run task on a dedicated high priority background thread.
-	m_renderLoopWorker = ThreadPool::RunAsync(workItemHandler, WorkItemPriority::High, WorkItemOptions::TimeSliced);
-}
-
-void SumoDX_Step1Main::StopRenderLoop()
-{
-	m_renderLoopWorker->Cancel();
-}
-
 // Updates the application state once per frame.
-void SumoDX_Step1Main::Update() 
+void SumoDX_Module3Main::Update() 
 {
-	ProcessInput();
-
 	// Update scene objects.
 	m_timer.Tick([&]()
 	{
 		// TODO: Replace this with your app's content update functions.
-		m_sceneRenderer->Update(m_timer);
+		//m_sceneRenderer->Update(m_timer);
 		m_fpsTextRenderer->Update(m_timer);
 	});
 }
 
-// Process all input from the user before updating game state
-void SumoDX_Step1Main::ProcessInput()
-{
-	// TODO: Add per frame input handling here.
-	m_sceneRenderer->TrackingUpdate(m_pointerLocationX);
-}
-
 // Renders the current frame according to the current application state.
 // Returns true if the frame was rendered and is ready to be displayed.
-bool SumoDX_Step1Main::Render() 
+bool SumoDX_Module3Main::Render() 
 {
 	// Don't try to render anything before the first Update.
 	if (m_timer.GetFrameCount() == 0)
@@ -119,23 +78,23 @@ bool SumoDX_Step1Main::Render()
 
 	// Render the scene objects.
 	// TODO: Replace this with your app's content rendering functions.
-	m_sceneRenderer->Render();
+	//m_sceneRenderer->Render();
 	m_fpsTextRenderer->Render();
 
 	return true;
 }
 
 // Notifies renderers that device resources need to be released.
-void SumoDX_Step1Main::OnDeviceLost()
+void SumoDX_Module3Main::OnDeviceLost()
 {
-	m_sceneRenderer->ReleaseDeviceDependentResources();
+	//m_sceneRenderer->ReleaseDeviceDependentResources();
 	m_fpsTextRenderer->ReleaseDeviceDependentResources();
 }
 
 // Notifies renderers that device resources may now be recreated.
-void SumoDX_Step1Main::OnDeviceRestored()
+void SumoDX_Module3Main::OnDeviceRestored()
 {
-	m_sceneRenderer->CreateDeviceDependentResources();
+	//m_sceneRenderer->CreateDeviceDependentResources();
 	m_fpsTextRenderer->CreateDeviceDependentResources();
 	CreateWindowSizeDependentResources();
 }

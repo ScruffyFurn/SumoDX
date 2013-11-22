@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-namespace SumoDX_Step1
+namespace SumoDX_Module3
 {
 	// Constant buffer used to send MVP matrices to the vertex shader.
 	struct ModelViewProjectionConstantBuffer

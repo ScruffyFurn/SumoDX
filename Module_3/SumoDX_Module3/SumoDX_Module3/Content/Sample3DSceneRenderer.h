@@ -4,7 +4,7 @@
 #include "ShaderStructures.h"
 #include "..\Common\StepTimer.h"
 
-namespace SumoDX_Step1
+namespace SumoDX_Module3
 {
 	// This sample renderer instantiates a basic rendering pipeline.
 	class Sample3DSceneRenderer

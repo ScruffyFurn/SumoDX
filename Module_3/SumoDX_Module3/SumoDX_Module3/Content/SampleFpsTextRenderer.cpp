@@ -3,7 +3,7 @@
 
 #include "Common/DirectXHelper.h"
 
-using namespace SumoDX_Step1;
+using namespace SumoDX_Module3;
 
 // Initializes D2D resources used for text rendering.
 SampleFpsTextRenderer::SampleFpsTextRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources) : 

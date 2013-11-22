@@ -3,7 +3,7 @@
 
 #include "..\Common\DirectXHelper.h"
 
-using namespace SumoDX_Step1;
+using namespace SumoDX_Module3;
 
 using namespace DirectX;
 using namespace Windows::Foundation;

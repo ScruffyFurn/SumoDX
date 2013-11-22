@@ -2,22 +2,19 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Common">
-      <UniqueIdentifier>3d3de678-50cc-4973-be6c-474dd4fdd44a</UniqueIdentifier>
+      <UniqueIdentifier>b90f4a80-4633-4c60-bb09-e72ca2216974</UniqueIdentifier>
     </Filter>
     <Filter Include="Assets">
-      <UniqueIdentifier>79bd2b38-c6f1-4c2d-aa73-d203d5eb0056</UniqueIdentifier>
+      <UniqueIdentifier>9ddb839b-c4ce-4fa6-87d7-36217caaadf8</UniqueIdentifier>
       <Extensions>bmp;fbx;gif;jpg;jpeg;tga;tiff;tif;png</Extensions>
     </Filter>
-	<Filter Include="Content">
-      <UniqueIdentifier>23e0c1a0-e16f-4745-b480-eef53dca5db6</UniqueIdentifier>
+    <Filter Include="Content">
+      <UniqueIdentifier>16b58237-602b-4965-a88d-de611c9f62f6</UniqueIdentifier>
     </Filter>
-    <Page Include="Common\StandardStyles.xaml">
-      <Filter>Common</Filter>
-    </Page>
     <ClInclude Include="Common\DirectXHelper.h">
       <Filter>Common</Filter>
     </ClInclude>
-	<ClInclude Include="Common\StepTimer.h">
+    <ClInclude Include="Common\StepTimer.h">
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="Common\DeviceResources.h">
@@ -26,7 +23,7 @@
     <ClCompile Include="Common\DeviceResources.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-	<ClInclude Include="Content\Sample3DSceneRenderer.h">
+    <ClInclude Include="Content\Sample3DSceneRenderer.h">
       <Filter>Content</Filter>
     </ClInclude>
     <ClInclude Include="Content\SampleFpsTextRenderer.h">
@@ -35,13 +32,13 @@
     <ClInclude Include="Content\ShaderStructures.h">
       <Filter>Content</Filter>
     </ClInclude>
-	<ClCompile Include="Content\Sample3DSceneRenderer.cpp">
+    <ClCompile Include="Content\Sample3DSceneRenderer.cpp">
       <Filter>Content</Filter>
     </ClCompile>
     <ClCompile Include="Content\SampleFpsTextRenderer.cpp">
       <Filter>Content</Filter>
     </ClCompile>
-	<FxCompile Include="Content\SamplePixelShader.hlsl">
+    <FxCompile Include="Content\SamplePixelShader.hlsl">
       <Filter>Content</Filter>
     </FxCompile>
     <FxCompile Include="Content\SampleVertexShader.hlsl">
@@ -59,5 +56,25 @@
     <Image Include="Assets\SplashScreen.png">
       <Filter>Assets</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="App.cpp" />
+    <ClCompile Include="SumoDX_Module3Main.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="GameObjects\GameObject.cpp" />
+    <ClCompile Include="GameObjects\SumoBlock.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="App.h" />
+    <ClInclude Include="SumoDX_Module3Main.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="GameObjects\GameObject.h" />
+    <ClInclude Include="GameObjects\SumoBlock.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SumoDX_Module3_TemporaryKey.pfx" />
   </ItemGroup>
 </Project>
