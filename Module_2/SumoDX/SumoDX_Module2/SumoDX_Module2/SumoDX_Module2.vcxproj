@@ -27,8 +27,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{2382c1b4-339c-4a72-be46-970976c0d8db}</ProjectGuid>
-    <RootNamespace>SumoDX</RootNamespace>
+    <ProjectGuid>{90bee68c-a3d5-49e4-92ee-292b2ecec3ef}</ProjectGuid>
+    <RootNamespace>SumoDX_Module2</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>
@@ -96,7 +96,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     
-    <PackageCertificateKeyFile>SumoDX_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateKeyFile>SumoDX_Module2_TemporaryKey.pfx</PackageCertificateKeyFile>
     
   </PropertyGroup>
   
@@ -184,7 +184,7 @@
 	  <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
-  
+
   <ItemGroup>
     <Image Include="Assets\Logo.png" />
     <Image Include="Assets\SmallLogo.png" />
@@ -192,14 +192,9 @@
     <Image Include="Assets\SplashScreen.png" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="App.xaml.h">
-      <DependentUpon>App.xaml</DependentUpon>
-    </ClInclude>
+    <ClInclude Include="App.h" />
     <ClInclude Include="Common\DeviceResources.h" />
-    <ClInclude Include="SumoDXMain.h" />
-	<ClInclude Include="DirectXPage.xaml.h">
-      <DependentUpon>DirectXPage.xaml</DependentUpon>
-    </ClInclude>
+    <ClInclude Include="SumoDX_Module2Main.h" />
     <ClInclude Include="Common\DirectXHelper.h" />
     <ClInclude Include="Common\StepTimer.h" />
     <ClInclude Include="Content\Sample3DSceneRenderer.h" />
@@ -208,14 +203,9 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="App.xaml.cpp">
-      <DependentUpon>App.xaml</DependentUpon>
-    </ClCompile>
+    <ClCompile Include="App.cpp" />
     <ClCompile Include="Common\DeviceResources.cpp" />
-	<ClCompile Include="SumoDXMain.cpp" />
-	<ClCompile Include="DirectXPage.xaml.cpp">
-      <DependentUpon>DirectXPage.xaml</DependentUpon>
-    </ClCompile>
+	<ClCompile Include="SumoDX_Module2Main.cpp" />
 	<ClCompile Include="Content\SampleFpsTextRenderer.cpp" />
     <ClCompile Include="Content\Sample3DSceneRenderer.cpp" />
     <ClCompile Include="pch.cpp">
@@ -232,7 +222,7 @@
       <SubType>Designer</SubType>
     </AppxManifest>
     
-    <None Include="SumoDX_TemporaryKey.pfx" />
+    <None Include="SumoDX_Module2_TemporaryKey.pfx" />
     
   </ItemGroup>
   <ItemGroup>
@@ -242,14 +232,6 @@
     <FxCompile Include="Content\SampleVertexShader.hlsl">
       <ShaderType>Vertex</ShaderType>
     </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ApplicationDefinition Include="App.xaml">
-      <SubType>Designer</SubType>
-    </ApplicationDefinition>
-    <Page Include="DirectXPage.xaml">
-      <SubType>Designer</SubType>
-    </Page>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

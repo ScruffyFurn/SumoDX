@@ -14,11 +14,10 @@ namespace DX
 	{
 	public:
 		DeviceResources();
-		void SetSwapChainPanel(Windows::UI::Xaml::Controls::SwapChainPanel^ panel);
+		void SetWindow(Windows::UI::Core::CoreWindow^ window);
 		void SetLogicalSize(Windows::Foundation::Size logicalSize);
 		void SetCurrentOrientation(Windows::Graphics::Display::DisplayOrientations currentOrientation);
 		void SetDpi(float dpi);
-		void SetCompositionScale(float compositionScaleX, float compositionScaleY);
 		void ValidateDevice();
 		void HandleDeviceLost();
 		void RegisterDeviceNotify(IDeviceNotify* deviceNotify);
@@ -74,8 +73,8 @@ namespace DX
 		Microsoft::WRL::ComPtr<IDWriteFactory2>		m_dwriteFactory;
 		Microsoft::WRL::ComPtr<IWICImagingFactory2>	m_wicFactory;
 
-		// Cached reference to the XAML panel.
-		Windows::UI::Xaml::Controls::SwapChainPanel^    m_swapChainPanel;
+		// Cached reference to the Window.
+		Platform::Agile<Windows::UI::Core::CoreWindow> m_window;
 
 		// Cached device properties.
 		D3D_FEATURE_LEVEL								m_d3dFeatureLevel;
@@ -85,8 +84,6 @@ namespace DX
 		Windows::Graphics::Display::DisplayOrientations	m_nativeOrientation;
 		Windows::Graphics::Display::DisplayOrientations	m_currentOrientation;
 		float											m_dpi;
-		float											m_compositionScaleX;
-		float											m_compositionScaleY;
 
 		// Transforms used for display orientation.
 		D2D1::Matrix3x2F	m_orientationTransform2D;
