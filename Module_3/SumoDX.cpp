@@ -13,6 +13,7 @@
 #include "../GameObjects/Animate.h"
 
 #include "../Audio/MediaReader.h"
+#include "../GameObjects/Cylinder.h"
 
 using namespace concurrency;
 using namespace DirectX;
@@ -57,51 +58,45 @@ void SumoDX::Initialize(
 
     m_timer = ref new GameTimer();
 
-    // Create a sphere primitive to represent the player.
-    // The sphere will be used to handle collisions and constrain the player in the world.
-    // It is not rendered so it is not added to the list of render objects.
-    // It is added to the object list so it will be included in intersection calculations.
-   // m_player = ref new Sphere(XMFLOAT3(0.0f, -1.3f, 4.0f), 0.2f);
+    // Create a box primitive to represent the player.
+    // The box will be used to handle collisions and constrain the player in the world.
 	m_player = ref new SumoBlock();
-	m_player->SetPosition(XMFLOAT3(10, 10, 100));
+	m_player->SetPosition(XMFLOAT3(0.0f, 2.0f, 0.0f));
+	// It is added to the object list so it will be included in intersection calculations.
     m_objects.push_back(m_player);
+	// It is added to the list of render objects so that it appears on screen.
 	m_renderObjects.push_back(m_player);
-	
-   // m_player->Active(true);
+
+	//floor model
+	Cylinder^ cylinder;
+	cylinder = ref new Cylinder(XMFLOAT3(0.0f, -1.0f, 0.0f), 10.0f, XMFLOAT3(0.0f, 1.0f, 0.0f));
+	//cylinder->Active(true);
+	m_objects.push_back(cylinder);
+	m_renderObjects.push_back(cylinder);
 
     m_camera = ref new Camera;
     m_camera->SetProjParams(XM_PI / 2, 1.0f, 0.01f, 100.0f);
     m_camera->SetViewParams(
-       // m_player->Position(),  // Eye point in world coordinates.
-		XMFLOAT3(0,-0,-10),
-		m_player->Position(),// XMFLOAT3 (0.0f, 0.0f, 0.0f),     // Look at point in world coordinates.
-        XMFLOAT3 (0.0f, 1.0f, 0.0f)      // The Up vector for the camera.
+		XMFLOAT3(10,10,10),// Eye point in world coordinates.
+		//m_player->Position(), // Look at point in world coordinates.
+		XMFLOAT3(0.0f, 0.0f, 0.0f),
+		XMFLOAT3 (0.0f, 1.0f, 0.0f)      // The Up vector for the camera.
         );
 
     m_controller->Pitch(m_camera->Pitch());
     m_controller->Yaw(m_camera->Yaw());
-
-    
 
     // Min and max Bound are defining the world space of the game.
     // All camera motion and dynamics are confined to this space.
     m_minBound = XMFLOAT3(-4.0f, -3.0f, -6.0f);
     m_maxBound = XMFLOAT3(4.0f, 3.0f, 6.0f);
 
-    
-
     MediaReader^ mediaReader = ref new MediaReader;
     auto targetHitSound = mediaReader->LoadMedia("/Resources/hit.wav");
-
-    
 
     // Instantiate a set of spheres to be used as ammunition for the game
     // and set the material properties of the spheres.
     auto ammoHitSound = mediaReader->LoadMedia("/Resources/bounce.wav");
-
-   
-
-   
 
     // Load the top score from disk if it exists.
     LoadHighScore();
@@ -117,13 +112,13 @@ void SumoDX::Initialize(
 void SumoDX::LoadGame()
 {
    // m_player->Position(XMFLOAT3 (0.0f, -1.3f, 4.0f));
-
+	/*
     m_camera->SetViewParams(
         m_player->Position(),            // Eye point in world coordinates.
         XMFLOAT3 (0.0f, 0.7f, 0.0f),     // Look at point in world coordinates.
         XMFLOAT3 (0.0f, 1.0f, 0.0f)      // The Up vector for the camera.
         );
-
+		*/
     m_controller->Pitch(m_camera->Pitch());
     m_controller->Yaw(m_camera->Yaw());
    
@@ -169,15 +164,30 @@ GameState SumoDX::RunGame()
 {
     // This method is called to execute a single time interval for active game play.
     // It returns the resulting state of game play after the interval has been executed.
-
     m_timer->Update();
 
-	m_camera->Eye(XMFLOAT3(0, -10, 0));
+	//TODO: Remove debug camera
 	m_camera->LookDirection(m_controller->LookDirection());
-
-
 	m_controller->Pitch(m_camera->Pitch());
 	m_controller->Yaw(m_camera->Yaw());
+
+	// run one frame of game play.
+	m_player->Velocity(m_controller->Velocity());
+	//m_camera->LookDirection(m_controller->LookDirection());
+
+	UpdateDynamics();
+
+	// Update the Camera with the player position updates from the dynamics calculations.
+//	m_camera->Eye(m_player->Position());
+	//TODO: Have camera look at the player.
+/*	XMFLOAT3 lookAtPlayer = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	lookAtPlayer.x = m_player->Position().x - m_camera->Eye().x;
+	lookAtPlayer.y = m_player->Position().y - m_camera->Eye().y;
+	lookAtPlayer.z = m_player->Position().z - m_camera->Eye().z;
+	m_camera->LookDirection(lookAtPlayer);
+*/
+
+
 
 	/*
     
@@ -191,9 +201,6 @@ GameState SumoDX::RunGame()
             SaveHighScore();
         }
         return GameState::TimeExpired;
-    }
-    else
-    {
        
 	*/
     return GameState::Active;
@@ -220,6 +227,19 @@ void SumoDX::UpdateDynamics()
     float timeTotal = m_timer->PlayingTime();
     float timeFrame = m_timer->DeltaTime();
     
+	// If the elapsed time is too long, we slice up the time and handle physics over several
+	// smaller time steps to avoid missing collisions.
+	float timeLeft = timeFrame;
+	float elapsedFrameTime;
+	while (timeLeft > 0.0f)
+	{
+		elapsedFrameTime = min(timeLeft, GameConstants::Physics::FrameLength);
+		timeLeft -= elapsedFrameTime;
+
+		// Update the player position.
+		m_player->Position(m_player->VectorPosition() + m_player->VectorVelocity() * elapsedFrameTime);
+	}
+
 	/*
 
 
@@ -486,15 +506,11 @@ void SumoDX::LoadState()
 
         // Reload the current player position and set both the camera and the controller
         // with the current Look Direction.
-        m_player->Position(
-            m_savedState->LoadXMFLOAT3(":PlayerPosition", XMFLOAT3(0.0f, 0.0f, 0.0f))
-            );
-        m_camera->Eye(m_player->Position());
-        m_camera->LookDirection(
-            m_savedState->LoadXMFLOAT3(":PlayerLookDirection", XMFLOAT3(0.0f, 0.0f, 1.0f))
-            );
-        m_controller->Pitch(m_camera->Pitch());
-        m_controller->Yaw(m_camera->Yaw());
+       // m_player->Position(m_savedState->LoadXMFLOAT3(":PlayerPosition", XMFLOAT3(0.0f, 0.0f, 0.0f)));
+       // m_camera->Eye(m_player->Position());
+       // m_camera->LookDirection(m_savedState->LoadXMFLOAT3(":PlayerLookDirection", XMFLOAT3(0.0f, 0.0f, 1.0f)) );
+       // m_controller->Pitch(m_camera->Pitch());
+        //m_controller->Yaw(m_camera->Yaw());
     }
     else
     {

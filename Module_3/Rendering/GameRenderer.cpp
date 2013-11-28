@@ -12,7 +12,8 @@
 #include "../Rendering/TargetTexture.h"
 #include "../Utilities/BasicLoader.h"
 #include "../Meshes/SumoMesh.h"
-
+#include "../Meshes/CylinderMesh.h"
+#include "../GameObjects/Cylinder.h"
 
 using namespace concurrency;
 using namespace DirectX;
@@ -257,7 +258,7 @@ void GameRenderer::FinalizeCreateGameDeviceResources()
    
     MeshObject^ sumoMesh = ref new SumoMesh(m_d3dDevice.Get());
    
-
+	MeshObject^ cylinderMesh = ref new CylinderMesh(m_d3dDevice.Get(), 26);
   
 
     auto objects = m_game->RenderObjects();
@@ -265,12 +266,15 @@ void GameRenderer::FinalizeCreateGameDeviceResources()
     // Attach the textures to the appropriate game objects.
     for (auto object = objects.begin(); object != objects.end(); object++)
     {
-       
-		
 		if (SumoBlock^ sumoBlock = dynamic_cast<SumoBlock^>(*object))
 		{
 			sumoBlock->Mesh(sumoMesh);
 			sumoBlock->NormalMaterial(cylinderMaterial);
+		}
+		else if (Cylinder^ cylinder = dynamic_cast<Cylinder^>(*object))
+		{
+			cylinder->Mesh(cylinderMesh);
+			cylinder->NormalMaterial(cylinderMaterial);
 		}
     }
 
@@ -325,60 +329,27 @@ void GameRenderer::FinalizeCreateGameDeviceResources()
 void GameRenderer::Render()
 {
     int renderingPasses = 1;
-    if (m_stereoEnabled)
-    {
-        renderingPasses = 2;
-    }
-
+  
     for (int i = 0; i < renderingPasses; i++)
     {
-        // Iterate through the number of rendering passes to be completed.
-        if (m_stereoEnabled && i > 0)
-        {
-            // Doing the Right Eye View.
-            m_d3dContext->OMSetRenderTargets(1, m_d3dRenderTargetViewRight.GetAddressOf(), m_d3dDepthStencilView.Get());
-            m_d3dContext->ClearDepthStencilView(m_d3dDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-            m_d2dContext->SetTarget(m_d2dTargetBitmapRight.Get());
-        }
-        else
-        {
-            // Doing the Mono or Left Eye View.
-            m_d3dContext->OMSetRenderTargets(1, m_d3dRenderTargetView.GetAddressOf(), m_d3dDepthStencilView.Get());
-            m_d3dContext->ClearDepthStencilView(m_d3dDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-            m_d2dContext->SetTarget(m_d2dTargetBitmap.Get());
-        }
+        //setup the rendering pass to be completed.
+        m_d3dContext->OMSetRenderTargets(1, m_d3dRenderTargetView.GetAddressOf(), m_d3dDepthStencilView.Get());
+        m_d3dContext->ClearDepthStencilView(m_d3dDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+        m_d2dContext->SetTarget(m_d2dTargetBitmap.Get());
+
+		const float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+
+		// Only need to clear the background when not rendering the full 3D scene since
+		// the 3D world is a fully enclosed box and the dynamics prevents the camera from
+		// moving outside this space.
+		m_d3dContext->ClearRenderTargetView(m_d3dRenderTargetView.Get(), ClearColor);
 
         if (m_game != nullptr && m_gameResourcesLoaded && m_levelResourcesLoaded)
         {
             // This section is only used after the game state has been initialized and all device
             // resources needed for the game have been created and associated with the game objects.
-            if (m_stereoEnabled)
-            {
-                // When doing stereo, it is necessary to update the projection matrix once per rendering pass.
-                ConstantBufferChangeOnResize changesOnResize;
-                XMStoreFloat4x4(
-                    &changesOnResize.projection,
-                    XMMatrixMultiply(
-                        XMMatrixTranspose(
-                            i == 0 ?
-                            m_game->GameCamera()->LeftEyeProjection() :
-                            m_game->GameCamera()->RightEyeProjection()
-                            ),
-                        XMMatrixTranspose(XMLoadFloat4x4(&m_rotationTransform3D))
-                        )
-                    );
 
-                m_d3dContext->UpdateSubresource(
-                    m_constantBufferChangeOnResize.Get(),
-                    0,
-                    nullptr,
-                    &changesOnResize,
-                    0,
-                    0
-                    );
-            }
             // Update variables that change once per frame.
-
             ConstantBufferChangesEveryFrame constantBufferChangesEveryFrame;
             XMStoreFloat4x4(
                 &constantBufferChangesEveryFrame.view,
@@ -412,24 +383,7 @@ void GameRenderer::Render()
                 (*object)->Render(m_d3dContext.Get(), m_constantBufferChangesEveryPrim.Get());
             }
         }
-       // else
-      //  {
-            const float ClearColor[4] = {0.1f, 0.1f, 0.1f, 1.0f};
 
-            // Only need to clear the background when not rendering the full 3D scene since
-            // the 3D world is a fully enclosed box and the dynamics prevents the camera from
-            // moving outside this space.
-            if (m_stereoEnabled && i > 0)
-            {
-                // Doing the Right Eye View.
-                m_d3dContext->ClearRenderTargetView(m_d3dRenderTargetViewRight.Get(), ClearColor);
-            }
-            else
-            {
-                // Doing the Mono or Left Eye View.
-                m_d3dContext->ClearRenderTargetView(m_d3dRenderTargetView.Get(), ClearColor);
-            }
-       // }
 
         m_d2dContext->BeginDraw();
 

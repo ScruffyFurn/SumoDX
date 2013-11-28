@@ -222,8 +222,6 @@ void DirectXBase::CheckStereoEnabledStatus()
     DX::ThrowIfFailed(
         dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory))
         );
-
-    m_stereoEnabled = dxgiFactory->IsWindowedStereoEnabled() ? true : false;
 }
 
 // This routine is called in the event handler for the view SizeChanged event.
@@ -235,9 +233,8 @@ void DirectXBase::UpdateForWindowSizeChange()
         return;
     }
 
-    bool previousStereoState = m_stereoEnabled;
     CheckStereoEnabledStatus();
-    if (previousStereoState != m_stereoEnabled)
+  /*  if (previousStereoState != m_stereoEnabled)
     {
         // Swap chain needs to be recreated so release the existing one.
         // The rest of the dependent resources with be released in CreateWindowSizeDependentResources.
@@ -245,7 +242,7 @@ void DirectXBase::UpdateForWindowSizeChange()
         m_windowSizeChangeInProgress = true;
         CreateWindowSizeDependentResources();
     }
-    else if (m_window->Bounds.Width != m_windowBounds.Width ||
+    else */if (m_window->Bounds.Width != m_windowBounds.Width ||
         m_window->Bounds.Height != m_windowBounds.Height ||
         m_orientation != DisplayInformation::GetForCurrentView()->CurrentOrientation)
     {
@@ -330,7 +327,7 @@ void DirectXBase::CreateWindowSizeDependentResources()
         swapChainDesc.Width = static_cast<UINT>(m_renderTargetSize.Width); // Match the size of the window.
         swapChainDesc.Height = static_cast<UINT>(m_renderTargetSize.Height);
         swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;           // This is the most common swapchain format.
-        swapChainDesc.Stereo = m_stereoEnabled;
+        //swapChainDesc.Stereo = m_stereoEnabled;
         swapChainDesc.SampleDesc.Count = 1;                          // Don't use multi-sampling.
         swapChainDesc.SampleDesc.Quality = 0;
         swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -469,27 +466,6 @@ void DirectXBase::CreateWindowSizeDependentResources()
             )
         );
 
-    // Stereo swapchains have an arrayed resource, so create a second Render Target
-    // for the right eye buffer.
-    if (m_stereoEnabled)
-    {
-        CD3D11_RENDER_TARGET_VIEW_DESC renderTargetViewRightDesc(
-            D3D11_RTV_DIMENSION_TEXTURE2DARRAY,
-            DXGI_FORMAT_B8G8R8A8_UNORM,
-            0,
-            1,
-            1
-            );
-
-        DX::ThrowIfFailed(
-            m_d3dDevice->CreateRenderTargetView(
-                backBuffer.Get(),
-                &renderTargetViewRightDesc,
-                &m_d3dRenderTargetViewRight
-                )
-            );
-    }
-
     // Create a descriptor for the depth/stencil buffer.
     CD3D11_TEXTURE2D_DESC depthStencilDesc(
         DXGI_FORMAT_D24_UNORM_S8_UINT,
@@ -561,22 +537,6 @@ void DirectXBase::CreateWindowSizeDependentResources()
             &m_d2dTargetBitmap
             )
         );
-
-    // Stereo swapchains have an arrayed resource, so create a second Target Bitmap
-    // for the right eye buffer.
-    if (m_stereoEnabled)
-    {
-        DX::ThrowIfFailed(
-            dxgiBackBuffer->CreateSubresourceSurface(1, &dxgiSurface)
-            );
-        DX::ThrowIfFailed(
-            m_d2dContext->CreateBitmapFromDxgiSurface(
-                dxgiSurface.Get(),
-                &bitmapProperties,
-                &m_d2dTargetBitmapRight
-            )
-        );
-    }
 
     // So now we can set the Direct2D render target.
     m_d2dContext->SetTarget(m_d2dTargetBitmap.Get());

@@ -22,7 +22,7 @@ protected:
 private:
 	DirectX::XMFLOAT4X4 m_rotationMatrix;
 	SumoBlock^ m_target;
-
+	void Initialize( DirectX::XMFLOAT3 position, SumoBlock^ target);
 };
 
 

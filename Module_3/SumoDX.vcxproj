@@ -161,6 +161,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GameObjects\Cylinder.h" />
+    <ClInclude Include="Meshes\CylinderMesh.h" />
     <ClInclude Include="Meshes\MeshObject.h" />
     <ClInclude Include="Meshes\SumoMesh.h" />
     <ClInclude Include="GameObjects\SumoBlock.h" />
@@ -173,6 +175,8 @@
     <ClInclude Include="Utilities\PersistentState.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="GameObjects\Cylinder.cpp" />
+    <ClCompile Include="Meshes\CylinderMesh.cpp" />
     <ClCompile Include="Meshes\MeshObject.cpp" />
     <ClCompile Include="Meshes\SumoMesh.cpp" />
     <ClCompile Include="GameObjects\SumoBlock.cpp" />

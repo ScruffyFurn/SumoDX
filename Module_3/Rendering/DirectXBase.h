@@ -71,7 +71,6 @@ protected private:
     Windows::Foundation::Rect                       m_windowBounds;
     float                                           m_dpi;
     Windows::Graphics::Display::DisplayOrientations m_orientation;
-    bool                                            m_stereoEnabled;
     bool                                            m_windowSizeChangeInProgress;
 
     // Transforms used for display orientation.
