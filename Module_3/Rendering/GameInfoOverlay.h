@@ -49,7 +49,7 @@ internal:
 
     void SetGameLoading(uint32 dots);
     void SetGameStats();
-    void SetGameOver();
+    void SetGameOver(bool win);
     void SetLevelStart();
     void SetPause();
     void SetAction(GameInfoOverlayCommand action);

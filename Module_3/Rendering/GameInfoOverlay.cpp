@@ -247,7 +247,7 @@ void GameInfoOverlay::SetGameStats()
 
 //----------------------------------------------------------------------
 
-void GameInfoOverlay::SetGameOver()
+void GameInfoOverlay::SetGameOver(bool win)
 {
     int length;
     Platform::String^ string;
@@ -259,7 +259,6 @@ void GameInfoOverlay::SetGameOver()
     m_d2dContext->FillRectangle(&titleRectangle, m_backgroundBrush.Get());
     m_d2dContext->FillRectangle(&bodyRectangle, m_backgroundBrush.Get());
 	
-	/*
 	if (win)
     {
         string = "You WON!";
@@ -268,7 +267,7 @@ void GameInfoOverlay::SetGameOver()
     {
         string = "Game Over";
     }
-	*/
+
     m_d2dContext->DrawText(
         string->Data(),
         string->Length(),

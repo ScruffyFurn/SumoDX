@@ -61,11 +61,29 @@ void SumoDX::Initialize(
     // Create a box primitive to represent the player.
     // The box will be used to handle collisions and constrain the player in the world.
 	m_player = ref new SumoBlock();
-	m_player->SetPosition(XMFLOAT3(0.0f, 2.0f, 0.0f));
+	m_player->Position(XMFLOAT3(-3.0f, 0.5f, 0.0f));
 	// It is added to the object list so it will be included in intersection calculations.
     m_objects.push_back(m_player);
 	// It is added to the list of render objects so that it appears on screen.
 	m_renderObjects.push_back(m_player);
+
+	//Create the enemy
+	// The box will be used to handle collisions and constrain the player in the world.
+	m_enemy = ref new SumoBlock();
+	m_enemy->Position(XMFLOAT3(3.0f, 0.5f, 0.0f));
+	// It is added to the object list so it will be included in intersection calculations.
+	m_objects.push_back(m_enemy);
+	// It is added to the list of render objects so that it appears on screen.
+	m_renderObjects.push_back(m_enemy);
+
+	//tell the sumo's about their opponent
+	m_enemy->SetTarget(m_player);
+	m_player->SetTarget(m_enemy);
+
+	//set starting difficulty
+	m_difficulty = 2;// rand() % 3;
+	m_delay = 2.0f;
+	m_choice = 0;
 
 	//floor model
 	Cylinder^ cylinder;
@@ -77,7 +95,7 @@ void SumoDX::Initialize(
     m_camera = ref new Camera;
     m_camera->SetProjParams(XM_PI / 2, 1.0f, 0.01f, 100.0f);
     m_camera->SetViewParams(
-		XMFLOAT3(10,10,10),// Eye point in world coordinates.
+		XMFLOAT3(0,5,10),// Eye point in world coordinates.
 		//m_player->Position(), // Look at point in world coordinates.
 		XMFLOAT3(0.0f, 0.0f, 0.0f),
 		XMFLOAT3 (0.0f, 1.0f, 0.0f)      // The Up vector for the camera.
@@ -177,17 +195,15 @@ GameState SumoDX::RunGame()
 
 	UpdateDynamics();
 
-	// Update the Camera with the player position updates from the dynamics calculations.
-//	m_camera->Eye(m_player->Position());
-	//TODO: Have camera look at the player.
-/*	XMFLOAT3 lookAtPlayer = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	lookAtPlayer.x = m_player->Position().x - m_camera->Eye().x;
-	lookAtPlayer.y = m_player->Position().y - m_camera->Eye().y;
-	lookAtPlayer.z = m_player->Position().z - m_camera->Eye().z;
-	m_camera->LookDirection(lookAtPlayer);
-*/
-
-
+	//did either leave the mat?
+	if (abs(XMVectorGetY(XMVector3Length(m_player->VectorPosition()))) > 10.0f)
+	{
+		return GameState::TimeExpired;
+	}
+	if (abs(XMVectorGetY(XMVector3Length(m_enemy->VectorPosition()))) > 10.0f)
+	{
+		return GameState::GameComplete;
+	}
 
 	/*
     
@@ -221,6 +237,46 @@ void SumoDX::OnResuming()
 }
 
 //----------------------------------------------------------------------
+void SumoDX::DetermineAIActions(float deltaTime)
+{
+	m_delay -= deltaTime;
+
+	if (m_delay <= 0)
+	{
+		m_choice = rand() % 3;
+
+		//delay until next action
+		m_delay = (rand() % 3) + 1.0f;
+	}
+	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f);
+	XMVECTOR direction;
+	switch (m_choice)
+	{
+	case 1:
+		//push harder
+		direction = ((m_player->VectorPosition() - m_enemy->VectorPosition()));
+		XMVectorSetIntY(direction, 0);
+		m_enemy->Position(m_enemy->VectorPosition() + XMVector3Normalize(direction) * deltaTime * m_difficulty);
+		break;
+	case 2:
+		//dodge
+		direction = XMVector3Cross(m_player->VectorPosition() - m_enemy->VectorPosition(), up);
+		XMVectorSetIntY(direction, 0);
+		m_enemy->Position(m_enemy->VectorPosition() + XMVector3Normalize(direction) * deltaTime * (m_difficulty-1));
+		
+
+		break;
+	default:
+		//move forward normally
+		direction = ((m_player->VectorPosition() - m_enemy->VectorPosition()));
+		XMVectorSetIntY(direction, 0);
+		m_enemy->Position(m_enemy->VectorPosition() + XMVector3Normalize(direction) * deltaTime);
+
+		break;
+	}
+}
+
+//----------------------------------------------------------------------
 
 void SumoDX::UpdateDynamics()
 {
@@ -230,252 +286,32 @@ void SumoDX::UpdateDynamics()
 	// If the elapsed time is too long, we slice up the time and handle physics over several
 	// smaller time steps to avoid missing collisions.
 	float timeLeft = timeFrame;
-	float elapsedFrameTime;
+	float deltaTime;
 	while (timeLeft > 0.0f)
 	{
-		elapsedFrameTime = min(timeLeft, GameConstants::Physics::FrameLength);
-		timeLeft -= elapsedFrameTime;
+		deltaTime = min(timeLeft, GameConstants::Physics::FrameLength);
+		timeLeft -= deltaTime;
 
 		// Update the player position.
-		m_player->Position(m_player->VectorPosition() + m_player->VectorVelocity() * elapsedFrameTime);
+		m_player->Position(m_player->VectorPosition() + m_player->VectorVelocity() * deltaTime);
+
+		//AI Update
+		DetermineAIActions(deltaTime);
+
+		//Check for player/enemy colision
+		float xDelta = m_enemy->Position().x - m_player->Position().x;
+		float zDelta = m_enemy->Position().z - m_player->Position().z;
+		float overlap = sqrt(xDelta * xDelta + zDelta * zDelta) - 1;
+		XMVECTOR playerToEnemy = m_enemy->VectorPosition() - m_player->VectorPosition();
+
+		//since each of our sumo's is 1 unit wide if we subtract one from their position deltas
+		// then we get their overlap value as a negative number and a possitive number means no contact.
+		if (overlap < 0)
+		{
+			m_player->Position(m_player->VectorPosition() + playerToEnemy * overlap * 0.5f);
+			m_enemy->Position(m_enemy->VectorPosition() - playerToEnemy * overlap * 0.5f);
+		}
 	}
-
-	/*
-
-
-#pragma region Animate Objects
-    // Walk the list of objects looking for any objects that have an animation associated with it.
-    // Update the position of the object based on evaluating the animation object with the current time.
-    // Once the current time (timeTotal) is past the end of the animation time remove
-    // the animation object since it is no longer needed.
-    for (uint32 i = 0; i < m_objects.size(); i++)
-    {
-        if (m_objects[i]->AnimatePosition())
-        {
-            m_objects[i]->Position(m_objects[i]->AnimatePosition()->Evaluate(timeTotal));
-            if (m_objects[i]->AnimatePosition()->IsFinished(timeTotal))
-            {
-                m_objects[i]->AnimatePosition(nullptr);
-            }
-        }
-    }
-#pragma endregion
-
-    // If the elapsed time is too long, we slice up the time and handle physics over several
-    // smaller time steps to avoid missing collisions.
-    float timeLeft = timeFrame;
-    float elapsedFrameTime;
-    while (timeLeft > 0.0f)
-    {
-        elapsedFrameTime = min(timeLeft, GameConstants::Physics::FrameLength);
-        timeLeft -= elapsedFrameTime;
-
-        // Update the player position.
-        m_player->Position(m_player->VectorPosition() + m_player->VectorVelocity() * elapsedFrameTime);
-
-        // Do m_player / object intersections.
-        for (uint32 a = 0; a < m_objects.size(); a++)
-        {
-            if (m_objects[a]->Active() && m_objects[a] != m_player)
-            {
-                XMFLOAT3 contact;
-                XMFLOAT3 normal;
-
-                if (m_objects[a]->IsTouching(m_player->Position(), m_player->Radius(), &contact, &normal))
-                {
-                    // Player is in contact with m_objects[a].
-                    XMVECTOR oneToTwo;
-                    oneToTwo = -XMLoadFloat3(&normal);
-
-                    float impact = XMVectorGetX(
-                        XMVector3Dot (oneToTwo, m_player->VectorVelocity())
-                        );
-                    // Make sure that the player is actually headed towards the object. At grazing angles there
-                    // could appear to be an impact when the player is actually already hit and moving away.
-                    if (impact > 0.0f)
-                    {
-                        // Compute the normal and tangential components of the player's velocity.
-                        XMVECTOR velocityOneNormal = XMVector3Dot(oneToTwo, m_player->VectorVelocity()) * oneToTwo;
-                        XMVECTOR velocityOneTangent = m_player->VectorVelocity() - velocityOneNormal;
-
-                        // Compute post-collision velocity.
-                        m_player->Velocity(velocityOneTangent - velocityOneNormal);
-
-                        // Fix the positions so that the player is just touching the object.
-                        float distanceToMove = m_player->Radius();
-                        m_player->Position(XMLoadFloat3(&contact) - (oneToTwo * distanceToMove));
-                    }
-                }
-            }
-        }
-        {
-            // Do collision detection of the player with the bounding world.
-            XMFLOAT3 position = m_player->Position();
-            XMFLOAT3 velocity = m_player->Velocity();
-            float radius = m_player->Radius();
-
-            // Check for player collisions with the walls floor or ceiling and adjust the position.
-            float limit = m_minBound.x + radius;
-            if (position.x < limit)
-            {
-                position.x = limit;
-                velocity.x = -velocity.x * GameConstants::Physics::GroundRestitution;
-            }
-            limit = m_maxBound.x - radius;
-            if (position.x > limit)
-            {
-                position.x = limit;
-                velocity.x = -velocity.x + GameConstants::Physics::GroundRestitution;
-            }
-            limit = m_minBound.y + radius;
-            if (position.y < limit)
-            {
-                position.y = limit;
-                velocity.y = -velocity.y * GameConstants::Physics::GroundRestitution;
-            }
-            limit = m_maxBound.y - radius;
-            if (position.y > limit)
-            {
-                position.y = limit;
-                velocity.y = -velocity.y * GameConstants::Physics::GroundRestitution;
-            }
-            limit = m_minBound.z + radius;
-            if (position.z < limit)
-            {
-                position.z = limit;
-                velocity.z = -velocity.z * GameConstants::Physics::GroundRestitution;
-            }
-            limit = m_maxBound.z - radius;
-            if (position.z > limit)
-            {
-                position.z = limit;
-                velocity.z = -velocity.z * GameConstants::Physics::GroundRestitution;
-            }
-            m_player->Position(position);
-            m_player->Velocity(velocity);
-        }
-
-       
-		 Apply Gravity and world intersection
-            // Apply gravity and check for collision against enclosing volume.
-            for (uint32 i = 0; i < m_ammoCount; i++)
-            {
-                // Update the position and velocity of the ammo instance.
-                m_ammo[i]->Position(m_ammo[i]->VectorPosition() + m_ammo[i]->VectorVelocity() * elapsedFrameTime);
-
-                XMFLOAT3 velocity = m_ammo[i]->Velocity();
-                XMFLOAT3 position = m_ammo[i]->Position();
-
-                velocity.x -= velocity.x * 0.1f * elapsedFrameTime;
-                velocity.z -= velocity.z * 0.1f * elapsedFrameTime;
-                if (!m_ammo[i]->OnGround())
-                {
-                    // Apply gravity if the ammo instance is not already resting on the ground.
-                    velocity.y -= GameConstants::Physics::Gravity * elapsedFrameTime;
-                }
-
-                if (!m_ammo[i]->OnGround())
-                {
-                    float limit = m_minBound.y + GameConstants::AmmoRadius;
-                    if (position.y < limit)
-                    {
-                        // The ammo instance hit the ground.
-                        // Align the ammo instance to the ground, invert the Y component of the velocity and
-                        // play the impact sound. The X and Z velocity components will be reduced
-                        // because of friction.
-                        position.y = limit;
-                        m_ammo[i]->PlaySound(-velocity.y, m_player->Position());
-
-                        velocity.y = -velocity.y * GameConstants::Physics::GroundRestitution;
-                        velocity.x *= GameConstants::Physics::Friction;
-                        velocity.z *= GameConstants::Physics::Friction;
-                    }
-                }
-                else
-                {
-                    // The ammo instance is resting or rolling on ground.
-                    // X and Z velocity components are reduced because of friction.
-                    velocity.x *= GameConstants::Physics::Friction;
-                    velocity.z *= GameConstants::Physics::Friction;
-                }
-
-                float limit = m_maxBound.y - GameConstants::AmmoRadius;
-                if (position.y > limit)
-                {
-                    // The ammo instance hit the ceiling.
-                    // Align the ammo instance to the ceiling, invert the Y component of the velocity and
-                    // play the impact sound. The X and Z velocity components will be reduced
-                    // because of friction.
-                    position.y = limit;
-                    m_ammo[i]->PlaySound(-velocity.y, m_player->Position());
-
-                    velocity.y = -velocity.y * GameConstants::Physics::GroundRestitution;
-                    velocity.x *= GameConstants::Physics::Friction;
-                    velocity.z *= GameConstants::Physics::Friction;
-                }
-
-                limit = m_minBound.y + GameConstants::AmmoRadius;
-                if ((GameConstants::Physics::Gravity * (position.y - limit) + 0.5f * velocity.y * velocity.y) < GameConstants::Physics::RestThreshold)
-                {
-                    // The Y velocity component is below the resting threshold so flag the instance as
-                    // laying on the ground and set the Y velocity component to zero.
-                    position.y = limit;
-                    velocity.y = 0.0f;
-                    m_ammo[i]->OnGround(true);
-                }
-
-                limit = m_minBound.z + GameConstants::AmmoRadius;
-                if (position.z < limit)
-                {
-                    // The ammo instance hit the a wall in the min Z direction.
-                    // Align the ammo instance to the wall, invert the Z component of the velocity and
-                    // play the impact sound.
-                    position.z = limit;
-                    m_ammo[i]->PlaySound(-velocity.z, m_player->Position());
-                    velocity.z = -velocity.z * GameConstants::Physics::GroundRestitution;
-                }
-
-                limit = m_maxBound.z - GameConstants::AmmoRadius;
-                if (position.z > limit)
-                {
-                    // The ammo instance hit the a wall in the max Z direction.
-                    // Align the ammo instance to the wall, invert the Z component of the velocity and
-                    // play the impact sound.
-                    position.z = limit;
-                    m_ammo[i]->PlaySound(-velocity.z, m_player->Position());
-                    velocity.z = -velocity.z * GameConstants::Physics::GroundRestitution;
-                }
-
-                limit = m_minBound.x + GameConstants::AmmoRadius;
-                if (position.x < limit)
-                {
-                    // The ammo instance hit the a wall in the min X direction.
-                    // Align the ammo instance to the wall, invert the X component of the velocity and
-                    // play the impact sound.
-                    position.x = limit;
-                    m_ammo[i]->PlaySound(-velocity.x, m_player->Position());
-                    velocity.x = -velocity.x * GameConstants::Physics::GroundRestitution;
-                }
-
-                limit = m_maxBound.x - GameConstants::AmmoRadius;
-                if (position.x > limit)
-                {
-                    // The ammo instance hit the a wall in the max X direction.
-                    // Align the ammo instance to the wall, invert the X component of the velocity and
-                    // play the impact sound.
-                    position.x = limit;
-                    m_ammo[i]->PlaySound(-velocity.x, m_player->Position());
-                    velocity.x = -velocity.x * GameConstants::Physics::GroundRestitution;
-                }
-
-                // Save the updated velocity and position for the ammo instance.
-                m_ammo[i]->Velocity(velocity);
-                m_ammo[i]->Position(position);
-            }
-        }
-    }
-#pragma endregion
-	*/
 }
 
 //----------------------------------------------------------------------

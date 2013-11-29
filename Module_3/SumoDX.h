@@ -98,6 +98,7 @@ private:
     void LoadHighScore();
  
     void UpdateDynamics();
+	void DetermineAIActions(float deltaTime);
 
     MoveLookController^                         m_controller;
     GameRenderer^                               m_renderer;
@@ -111,8 +112,10 @@ private:
     PersistentState^                            m_savedState;
 
     GameTimer^                                  m_timer;
+	float										m_delay;
+	int											m_choice;
     bool                                        m_gameActive;
-   
+	float										m_difficulty;
     float                                       m_levelDuration;
    
     
@@ -120,6 +123,7 @@ private:
     
 
     SumoBlock^                                  m_player;
+	SumoBlock^									m_enemy;
     std::vector<GameObject^>                    m_objects;           // List of all objects to be included in intersection calculations.
     std::vector<GameObject^>                    m_renderObjects;     // List of all objects to be rendered.
 

@@ -10,8 +10,6 @@ internal:
 		SumoBlock^ target
 		);
 
-	void SetPosition(DirectX::XMFLOAT3 position);
-
 	void SetTarget(SumoBlock^ target);
 
 protected:
@@ -22,6 +20,7 @@ protected:
 private:
 	DirectX::XMFLOAT4X4 m_rotationMatrix;
 	SumoBlock^ m_target;
+	float angle;
 	void Initialize( DirectX::XMFLOAT3 position, SumoBlock^ target);
 };
 

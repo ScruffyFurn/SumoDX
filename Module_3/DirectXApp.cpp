@@ -747,7 +747,7 @@ void DirectXApp::SetGameInfoOverlay(GameInfoOverlayState state)
 
     case GameInfoOverlayState::GameOverWon:
         m_renderer->InfoOverlay()->SetGameOver(
-           // true
+            true
          //   m_game->LevelCompleted() + 1,
          //   m_game->TotalHits(),
          //   m_game->TotalShots(),
@@ -757,7 +757,7 @@ void DirectXApp::SetGameInfoOverlay(GameInfoOverlayState state)
 
     case GameInfoOverlayState::GameOverLost:
         m_renderer->InfoOverlay()->SetGameOver(
-            //false
+            false
          //   m_game->LevelCompleted(),
          //   m_game->TotalHits(),
         //    m_game->TotalShots(),
