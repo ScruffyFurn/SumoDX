@@ -21,8 +21,7 @@
 //     m_constantBufferNeverChanges - general parameters that are set only once.  This includes
 //         all the lights used in scene generation.
 //     m_constantBufferChangeOnResize - the projection matrix.  It is typically only changed when
-//         the window is resized, however it will be changed 2x per frame when rendering
-//         in 3D stereo.
+//         the window is resized.
 //     m_constantBufferChangesEveryFrame - the view transformation matrix.  This is set once per frame.
 //     m_constantBufferChangesEveryPrim - the parameters for each object.  It includes the object to world
 //         transformation matrix as well as material properties like color and specular exponent for lighting

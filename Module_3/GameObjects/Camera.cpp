@@ -7,7 +7,6 @@
 
 #include "pch.h"
 #include "../GameObjects/Camera.h"
-#include "../Rendering/StereoProjection.h"
 
 using namespace DirectX;
 
@@ -107,34 +106,6 @@ void Camera::SetProjParams(
             m_farPlane
             )
         );
-
-    STEREO_PARAMETERS* stereoParams = nullptr;
-    // Update the projection matrix.
-    XMStoreFloat4x4(
-        &m_projectionMatrixLeft,
-        MatrixStereoProjectionFovLH(
-            stereoParams,
-            STEREO_CHANNEL::LEFT,
-            m_fieldOfView,
-            m_aspectRatio,
-            m_nearPlane,
-            m_farPlane,
-            STEREO_MODE::NORMAL
-            )
-        );
-
-    XMStoreFloat4x4(
-        &m_projectionMatrixRight,
-        MatrixStereoProjectionFovLH(
-            stereoParams,
-            STEREO_CHANNEL::RIGHT,
-            m_fieldOfView,
-            m_aspectRatio,
-            m_nearPlane,
-            m_farPlane,
-            STEREO_MODE::NORMAL
-            )
-        );
 }
 
 //--------------------------------------------------------------------------------------
@@ -149,20 +120,6 @@ DirectX::XMMATRIX Camera::View()
 DirectX::XMMATRIX Camera::Projection()
 {
     return XMLoadFloat4x4(&m_projectionMatrix);
-}
-
-//--------------------------------------------------------------------------------------
-
-DirectX::XMMATRIX Camera::LeftEyeProjection()
-{
-    return XMLoadFloat4x4(&m_projectionMatrixLeft);
-}
-
-//--------------------------------------------------------------------------------------
-
-DirectX::XMMATRIX Camera::RightEyeProjection()
-{
-    return XMLoadFloat4x4(&m_projectionMatrixRight);
 }
 
 //--------------------------------------------------------------------------------------

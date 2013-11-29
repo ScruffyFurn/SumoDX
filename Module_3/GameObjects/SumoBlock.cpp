@@ -38,16 +38,15 @@ void SumoBlock::UpdatePosition()
 {
 	if (m_target != nullptr)
 	{
-		//TODO: fix the jitter.
-		//face the target
-		angle += XMVectorGetY(XMVector3AngleBetweenNormals(XMVector3Normalize(m_target->VectorPosition() - VectorPosition()), XMVector3Normalize(XMVector3Transform(XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), XMMatrixRotationY(angle)))));
-		if (angle < -XM_PI*2.0f)
+		//Face the target.
+		XMVECTOR direction = XMVector3Normalize(m_target->VectorPosition() - VectorPosition());
+		float ans = XMVectorGetY(XMVector2AngleBetweenNormals(direction, XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f)));
+		angle = ans;
+
+		//if you are in the upper arc
+		if (XMVectorGetZ(direction) > 0)
 		{
-			angle += XM_PI*2.0f;
-		}
-		if (angle > XM_PI*2.0f)
-		{
-			angle -= XM_PI*2.0f;
+			angle *= -1;
 		}
 
 		XMStoreFloat4x4(&m_modelMatrix, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixRotationY(angle) * XMMatrixTranslation(m_position.x, m_position.y, m_position.z));

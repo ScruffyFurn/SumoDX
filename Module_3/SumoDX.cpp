@@ -81,7 +81,7 @@ void SumoDX::Initialize(
 	m_player->SetTarget(m_enemy);
 
 	//set starting difficulty
-	m_difficulty = 2;// rand() % 3;
+	m_difficulty = 0;// rand() % 3;
 	m_delay = 2.0f;
 	m_choice = 0;
 
@@ -263,8 +263,6 @@ void SumoDX::DetermineAIActions(float deltaTime)
 		direction = XMVector3Cross(m_player->VectorPosition() - m_enemy->VectorPosition(), up);
 		XMVectorSetIntY(direction, 0);
 		m_enemy->Position(m_enemy->VectorPosition() + XMVector3Normalize(direction) * deltaTime * (m_difficulty-1));
-		
-
 		break;
 	default:
 		//move forward normally

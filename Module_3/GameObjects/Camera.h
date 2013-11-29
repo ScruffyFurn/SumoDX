@@ -9,8 +9,7 @@
 
 // Camera:
 // This class defines the position, orientation and viewing frustum of a camera looking into
-// a 3D world.  It will generate both the View matrix and Projection matrix.  It can also
-// provide a pair of Projection matrices to be used when stereoscopic 3D is used.
+// a 3D world.  It will generate both the View matrix and Projection matrix.
 
 ref class Camera
 {
@@ -25,8 +24,6 @@ internal:
 
     DirectX::XMMATRIX View();
     DirectX::XMMATRIX Projection();
-    DirectX::XMMATRIX LeftEyeProjection();
-    DirectX::XMMATRIX RightEyeProjection();
     DirectX::XMMATRIX World();
     DirectX::XMFLOAT3 Eye();
     DirectX::XMFLOAT3 LookAt();
@@ -39,8 +36,6 @@ internal:
 protected private:
     DirectX::XMFLOAT4X4 m_viewMatrix;
     DirectX::XMFLOAT4X4 m_projectionMatrix;
-    DirectX::XMFLOAT4X4 m_projectionMatrixLeft;
-    DirectX::XMFLOAT4X4 m_projectionMatrixRight;
 
     DirectX::XMFLOAT4X4 m_inverseView;
 

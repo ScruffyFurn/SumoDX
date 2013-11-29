@@ -29,9 +29,6 @@ void DirectXBase::Initialize(CoreWindow^ window, float dpi)
     CreateDeviceIndependentResources();
     CreateDeviceResources();
     SetDpi(dpi);
-
-    DisplayInformation::GetForCurrentView()->StereoEnabledChanged +=
-        ref new TypedEventHandler<DisplayInformation^, Platform::Object^>(this, &DirectXBase::OnStereoEnabledChanged);
 }
 
 // Recreate all device resources and set them back to the current state.
@@ -182,12 +179,6 @@ void DirectXBase::CreateDeviceResources()
         );
 }
 
-// Event handler for StereoEnabled changes.
-void DirectXBase::OnStereoEnabledChanged(_In_ DisplayInformation^ sender, _In_ Platform::Object^ args)
-{
-    UpdateForWindowSizeChange();
-}
-
 // Helps track the DPI in the helper class.
 void DirectXBase::SetDpi(float dpi)
 {
@@ -206,24 +197,6 @@ void DirectXBase::SetDpi(float dpi)
     }
 }
 
-void DirectXBase::CheckStereoEnabledStatus()
-{
-    ComPtr<IDXGIDevice1> dxgiDevice;
-    DX::ThrowIfFailed(
-        m_d3dDevice.As(&dxgiDevice)
-        );
-
-    ComPtr<IDXGIAdapter> dxgiAdapter;
-    DX::ThrowIfFailed(
-        dxgiDevice->GetAdapter(&dxgiAdapter)
-        );
-
-    ComPtr<IDXGIFactory2> dxgiFactory;
-    DX::ThrowIfFailed(
-        dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory))
-        );
-}
-
 // This routine is called in the event handler for the view SizeChanged event.
 void DirectXBase::UpdateForWindowSizeChange()
 {
@@ -233,16 +206,7 @@ void DirectXBase::UpdateForWindowSizeChange()
         return;
     }
 
-    CheckStereoEnabledStatus();
-  /*  if (previousStereoState != m_stereoEnabled)
-    {
-        // Swap chain needs to be recreated so release the existing one.
-        // The rest of the dependent resources with be released in CreateWindowSizeDependentResources.
-        m_swapChain = nullptr;
-        m_windowSizeChangeInProgress = true;
-        CreateWindowSizeDependentResources();
-    }
-    else */if (m_window->Bounds.Width != m_windowBounds.Width ||
+	if (m_window->Bounds.Width != m_windowBounds.Width ||
         m_window->Bounds.Height != m_windowBounds.Height ||
         m_orientation != DisplayInformation::GetForCurrentView()->CurrentOrientation)
     {
@@ -320,14 +284,11 @@ void DirectXBase::CreateWindowSizeDependentResources()
         m_d2dTargetBitmapRight = nullptr;
         m_d3dContext->Flush();
 
-        CheckStereoEnabledStatus();
-
         // Allocate a descriptor.
         DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {0};
         swapChainDesc.Width = static_cast<UINT>(m_renderTargetSize.Width); // Match the size of the window.
         swapChainDesc.Height = static_cast<UINT>(m_renderTargetSize.Height);
         swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;           // This is the most common swapchain format.
-        //swapChainDesc.Stereo = m_stereoEnabled;
         swapChainDesc.SampleDesc.Count = 1;                          // Don't use multi-sampling.
         swapChainDesc.SampleDesc.Quality = 0;
         swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;

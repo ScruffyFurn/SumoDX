@@ -38,8 +38,6 @@ internal:
     event D3DDeviceEventHandler^ DeviceReset;
 
 protected private:
-    void OnStereoEnabledChanged(_In_ Windows::Graphics::Display::DisplayInformation^ sender, _In_ Platform::Object^ args);
-    void CheckStereoEnabledStatus();
     DXGI_MODE_ROTATION ComputeDisplayRotation();
 
     Platform::Agile<Windows::UI::Core::CoreWindow>  m_window;

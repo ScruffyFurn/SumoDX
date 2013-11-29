@@ -197,7 +197,6 @@
     <ClInclude Include="Audio\MediaReader.h" />
     <ClInclude Include="Input\MoveLookController.h" />
     <ClInclude Include="Audio\SoundEffect.h" />
-    <ClInclude Include="Rendering\StereoProjection.h" />
     <ClInclude Include="Rendering\TargetTexture.h" />
   </ItemGroup>
   <ItemGroup>
@@ -210,7 +209,6 @@
     <ClCompile Include="Audio\MediaReader.cpp" />
     <ClCompile Include="Input\MoveLookController.cpp" />
     <ClCompile Include="Audio\SoundEffect.cpp" />
-    <ClCompile Include="Rendering\StereoProjection.cpp" />
     <ClCompile Include="Rendering\TargetTexture.cpp" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
