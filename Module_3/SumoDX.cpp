@@ -72,8 +72,6 @@ void SumoDX::Initialize(
 
 	//set starting difficulty
 	m_difficulty = 0;// rand() % 3;
-	m_delay = 2.0f;
-	m_choice = 0;
 
 	//floor model
 	Cylinder^ cylinder;
@@ -83,9 +81,8 @@ void SumoDX::Initialize(
     m_camera = ref new Camera;
     m_camera->SetProjParams(XM_PI / 2, 1.0f, 0.01f, 100.0f);
     m_camera->SetViewParams(
-		XMFLOAT3(0,5,10),// Eye point in world coordinates.
-		//m_player->Position(), // Look at point in world coordinates.
-		XMFLOAT3(0.0f, 0.0f, 0.0f),
+		XMFLOAT3(0,7,10),// Eye point in world coordinates.
+		XMFLOAT3(0.0f, -5.0f, 0.0f),// Look at point in world coordinates.
 		XMFLOAT3 (0.0f, 1.0f, 0.0f)      // The Up vector for the camera.
         );
 
@@ -179,7 +176,6 @@ GameState SumoDX::RunGame()
 
 	// run one frame of game play.
 	m_player->Velocity(m_controller->Velocity());
-	//m_camera->LookDirection(m_controller->LookDirection());
 
 	UpdateDynamics();
 

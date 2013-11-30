@@ -83,10 +83,6 @@ void DirectXApp::SetWindow(
         XMFLOAT2(0.0f, window->Bounds.Height - GameConstants::TouchRectangleSize),
         XMFLOAT2(GameConstants::TouchRectangleSize, window->Bounds.Height)
         );
-    m_controller->SetFireRect(
-        XMFLOAT2(window->Bounds.Width - GameConstants::TouchRectangleSize, window->Bounds.Height - GameConstants::TouchRectangleSize),
-        XMFLOAT2(window->Bounds.Width, window->Bounds.Height)
-        );
 
     m_renderer->Initialize(window, DisplayInformation::GetForCurrentView()->LogicalDpi);
     m_renderer->DeviceLost += ref new D3DDeviceEventHandler(this, &DirectXApp::OnDeviceLost);
@@ -196,10 +192,6 @@ void DirectXApp::OnWindowSizeChanged(
     m_controller->SetMoveRect(
         XMFLOAT2(0.0f, window->Bounds.Height - GameConstants::TouchRectangleSize),
         XMFLOAT2(GameConstants::TouchRectangleSize, window->Bounds.Height)
-        );
-    m_controller->SetFireRect(
-        XMFLOAT2(window->Bounds.Width - GameConstants::TouchRectangleSize, window->Bounds.Height - GameConstants::TouchRectangleSize),
-        XMFLOAT2(window->Bounds.Width, window->Bounds.Height)
         );
 
     if (m_updateState == UpdateEngineState::WaitingForPress)
@@ -376,7 +368,7 @@ void DirectXApp::Update()
             }
         }
         break;
-
+	//the main game play state.
     case UpdateEngineState::Dynamics:
         if (m_controller->IsPauseRequested())
         {
@@ -406,8 +398,6 @@ void DirectXApp::Update()
                 ShowGameInfoOverlay();
                 m_updateState = UpdateEngineState::WaitingForResources;
                 m_pressResult = PressResultState::Play;
-
-              
                 break;
 
             case GameState::GameComplete:

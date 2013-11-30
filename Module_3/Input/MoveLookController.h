@@ -41,12 +41,7 @@
 //         a virtual joystick where the vertical motion will be translated into
 //         forward/backward position motion and horizontal motion will be translated
 //         into left/right position motion.
-//     FireRect - the rectangle of the screen where touch input will be converted
-//         into a fire button.  A touch sequence of PointerPressed will result in
-//         IsFiring method to return true in AutoFire mode, otherwise a PointPressed
-//         followed by a PointerReleased event in the FireRect will result in the
-//         IsFiring method returning true once.
-//     Outside MoveRect & FireRect - this area of the screen controls the Look control
+//     Outside MoveRect - this area of the screen controls the Look control
 //         and updates the LookDirection.
 //
 // The following controls are mapped from the Xbox controller using XInput:
@@ -54,11 +49,10 @@
 //         IsPauseRequested in the Active state.
 //     Left Thumb stick - is mapped to the move control in Active mode
 //     Right Thumb stick - is mapped to the look control in Active mode
-//     Right Trigger - is mapped to IsFiring in Active mode or "Fire" button.
 //
 // The keyboard/mouse are used as a pair to provide a typical PC gaming input model in Active
 // mode:
-//     Mouse - is mapped to the look control.  Left mouse is mapped to IsFiring or 'Fire' button
+//     Mouse - is mapped to the look control.
 //     W key - is mapped to the 'forward' motion of the move control
 //     S key - is mapped to the 'back' motion of the move control
 //     A key - is mapped to the 'left' motion of the move control
@@ -93,10 +87,6 @@ internal:
         _In_ DirectX::XMFLOAT2 upperLeft,
         _In_ DirectX::XMFLOAT2 lowerRight
         );
-    void SetFireRect(
-        _In_ DirectX::XMFLOAT2 upperLeft,
-        _In_ DirectX::XMFLOAT2 lowerRight
-        );
     void WaitForPress(
         _In_ DirectX::XMFLOAT2 UpperLeft,
         _In_ DirectX::XMFLOAT2 LowerRight
@@ -104,7 +94,6 @@ internal:
     void WaitForPress();
 
     void Update();
-    bool IsFiring();
     bool IsPressComplete();
     bool IsPauseRequested();
 
@@ -116,9 +105,6 @@ internal:
     void  Yaw(_In_ float yaw);
     bool  Active();
     void  Active(_In_ bool active);
-
-    bool AutoFire();
-    void AutoFire(_In_ bool AutoFire);
 
 protected:
     void OnPointerPressed(
@@ -177,16 +163,7 @@ private:
     DirectX::XMFLOAT2           m_lookLastPoint;        // Last point (from last frame).
     DirectX::XMFLOAT2           m_lookLastDelta;        // The delta used for smoothing between frames.
 
-    // Properties of the Fire control.
-    bool                        m_autoFire;
-    bool                        m_firePressed;
-    DirectX::XMFLOAT2           m_fireUpperLeft;        // Bounding box where this control will activate.
-    DirectX::XMFLOAT2           m_fireLowerRight;
-    bool                        m_fireInUse;            // The fire control in in use.
-    UINT32                      m_firePointerID;        // Id of the pointer in this control.
-    DirectX::XMFLOAT2           m_fireLastPoint;        // Last fire position.
-
-    // Properties of the Mouse control.  This is a combination of Look and Fire.
+    // Properties of the Mouse control.
     bool                        m_mouseInUse;
     uint32                      m_mousePointerID;
     DirectX::XMFLOAT2           m_mouseLastPoint;
@@ -205,7 +182,6 @@ private:
     XINPUT_CAPABILITIES         m_xinputCaps;             // Capabilites of the controller.
     XINPUT_STATE                m_xinputState;            // The current state of the controller.
     bool                        m_xinputStartButtonInUse;
-    bool                        m_xinputTriggerInUse;
 
     // Input states for Keyboard.
     bool                        m_forward;

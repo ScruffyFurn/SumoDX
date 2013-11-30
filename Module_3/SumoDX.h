@@ -103,8 +103,6 @@ private:
     PersistentState^                            m_savedState;
 
     GameTimer^                                  m_timer;
-	float										m_delay;
-	int											m_choice;
     bool                                        m_gameActive;
 	float										m_difficulty;
     float                                       m_levelDuration;

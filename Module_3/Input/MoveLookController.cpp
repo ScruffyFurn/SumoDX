@@ -24,7 +24,6 @@ using namespace Windows::System;
 //----------------------------------------------------------------------
 
 MoveLookController::MoveLookController():
-    m_autoFire(true),
     m_isControllerConnected(false)
 {
 }
@@ -84,28 +83,6 @@ bool MoveLookController::IsPauseRequested()
         else
         {
             return false;
-        }
-    }
-    return false;
-}
-
-//----------------------------------------------------------------------
-
-bool MoveLookController::IsFiring()
-{
-    if (m_state == MoveLookControllerState::Active)
-    {
-        if (m_autoFire)
-        {
-            return (m_fireInUse || (m_mouseInUse && m_mouseLeftInUse) || m_xinputTriggerInUse);
-        }
-        else
-        {
-            if (m_firePressed)
-            {
-                m_firePressed = false;
-                return true;
-            }
         }
     }
     return false;
@@ -193,23 +170,6 @@ void MoveLookController::OnPointerPressed(
                     m_moveInUse = true;
                 }
             }
-            else if (position.x > m_fireUpperLeft.x &&
-                position.x < m_fireLowerRight.x &&
-                position.y > m_fireUpperLeft.y &&
-                position.y < m_fireLowerRight.y)
-            {
-                // This pointer is in the fire control.
-                if (!m_fireInUse)
-                {
-                    m_fireLastPoint = position;
-                    m_firePointerID = pointerID;
-                    m_fireInUse = true;
-                    if (!m_autoFire)
-                    {
-                        m_firePressed = true;
-                    }
-                }
-            }
             else
             {
                 if (!m_lookInUse)
@@ -226,11 +186,6 @@ void MoveLookController::OnPointerPressed(
         default:
             bool rightButton = pointProperties->IsRightButtonPressed;
             bool leftButton = pointProperties->IsLeftButtonPressed;
-
-            if (!m_autoFire && (!m_mouseLeftInUse && leftButton))
-            {
-                m_firePressed = true;
-            }
 
             if (!m_mouseInUse)
             {
@@ -261,7 +216,6 @@ void MoveLookController::OnPointerPressed(
             L"\t%s%s%s %s%s%s",
             m_moveInUse ? L"Move " : L"",
             m_lookInUse ? L"Look " : L"",
-            m_fireInUse ? L"Fire " : L"",
             m_mouseInUse ? L"Mouse:" : L"",
             m_mouseLeftInUse ? L"L" : L"-",
             m_mouseRightInUse ? L"R" : L"-"
@@ -336,10 +290,6 @@ void MoveLookController::OnPointerMoved(
             {
                 m_yaw += XM_PI * 2.0f;
             }
-        }
-        else if (pointerID == m_firePointerID)
-        {
-            m_fireLastPoint = position;
         }
         else if (pointerID == m_mousePointerID)
         {
@@ -442,11 +392,6 @@ void MoveLookController::OnPointerReleased(
             m_lookInUse = false;
             m_lookPointerID = 0;
         }
-        else if (pointerID == m_firePointerID)
-        {
-            m_fireInUse = false;
-            m_firePointerID = 0;
-        }
         else if (pointerID == m_mousePointerID)
         {
             bool rightButton = pointProperties->IsRightButtonPressed;
@@ -504,11 +449,6 @@ void MoveLookController::OnPointerExited(
         {
             m_lookInUse = false;
             m_lookPointerID = 0;
-        }
-        else if (pointerID == m_firePointerID)
-        {
-            m_fireInUse = false;
-            m_firePointerID = 0;
         }
         else if (pointerID == m_mousePointerID)
         {
@@ -593,18 +533,15 @@ void MoveLookController::ResetState()
     m_buttonInUse = false;
     m_moveInUse = false;
     m_lookInUse = false;
-    m_fireInUse = false;
     m_mouseInUse = false;
     m_mouseLeftInUse = false;
     m_mouseRightInUse = false;
     m_movePointerID = 0;
     m_lookPointerID = 0;
-    m_firePointerID = 0;
     m_mousePointerID = 0;
     m_velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
     m_xinputStartButtonInUse = false;
-    m_xinputTriggerInUse = false;
 
     m_moveCommand = XMFLOAT3(0.0f, 0.0f, 0.0f);
     m_forward = false;
@@ -628,20 +565,6 @@ void MoveLookController::SetMoveRect (
 #endif
     m_moveUpperLeft  = upperLeft;
     m_moveLowerRight = lowerRight;
-}
-
-//----------------------------------------------------------------------
-
-void MoveLookController::SetFireRect (
-    _In_ XMFLOAT2 upperLeft,
-    _In_ XMFLOAT2 lowerRight
-    )
-{
-#ifdef MOVELOOKCONTROLLER_TRACE
-    DebugTrace(L"FireRect (%d, %d) to (%d, %d)", upperLeft.x, upperLeft.y, lowerRight.x, lowerRight.y);
-#endif
-    m_fireUpperLeft  = upperLeft;
-    m_fireLowerRight = lowerRight;
 }
 
 //----------------------------------------------------------------------
@@ -777,20 +700,6 @@ bool MoveLookController::Active()
 
 //----------------------------------------------------------------------
 
-void MoveLookController::AutoFire(_In_ bool autoFire)
-{
-    m_autoFire = autoFire;
-}
-
-//----------------------------------------------------------------------
-
-bool MoveLookController::AutoFire()
-{
-    return m_autoFire;
-}
-
-//----------------------------------------------------------------------
-
 void MoveLookController::Update()
 {
     UpdateGameController();
@@ -877,7 +786,6 @@ void MoveLookController::UpdateGameController()
         // Device is connected.
         m_isControllerConnected = true;
         m_xinputStartButtonInUse = false;
-        m_xinputTriggerInUse = false;
     }
 
     DWORD stateResult = XInputGetState(0, &m_xinputState);
@@ -970,20 +878,6 @@ void MoveLookController::UpdateGameController()
         m_pitch = __max(-XM_PI / 2.0f, m_pitch);
         m_pitch = __min(+XM_PI / 2.0f, m_pitch);
 
-        // Check the state of the Right Trigger button.  This is used to indicate fire control.
-
-        if (m_xinputState.Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD)
-        {
-            if (!m_autoFire && !m_xinputTriggerInUse)
-            {
-                m_firePressed = true;
-            }
-            m_xinputTriggerInUse = true;
-        }
-        else
-        {
-            m_xinputTriggerInUse = false;
-        }
         break;
     }
 }

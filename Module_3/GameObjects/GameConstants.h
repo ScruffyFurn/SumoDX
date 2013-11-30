@@ -38,7 +38,6 @@ namespace GameConstants
     {
         static const float GroundRestitution    = 0.8f;     // Percentage of the velocity transmitted by ground and walls when an ammo hit.
         static const float Friction             = 0.9f;     // The amount of velocity retained after friction is applied.
-        static const float AutoFireDelay        = 0.2f;     // The period between two successive ammo firing.
         static const float Gravity              = 5.0f;     // The magnitude of the downward force applied to ammos.
         static const float BounceTransfer       = 0.8f;     // The proportion of velocity transferred during a collision between 2 ammos.
         static const float BounceLost           = 0.1f;     // The proportion of velocity lost during a collision between 2 ammos.

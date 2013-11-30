@@ -283,7 +283,7 @@ void GameHud::Render(
 
         if (game->IsActivePlay())
         {
-/*            // Draw a rectangle for the touch input for the move control.
+            // Draw a rectangle for the touch input for the move control.
             d2dContext->DrawRectangle(
                 D2D1::RectF(
                     0.0f,
@@ -293,32 +293,7 @@ void GameHud::Render(
                     ),
                 m_textBrush.Get()
                 );
-*/
-			// Draw a rectangle for the touch input for the fire control.
-/*            d2dContext->DrawRectangle(
-                D2D1::RectF(
-                    windowBounds.Width - GameConstants::TouchRectangleSize,
-                    windowBounds.Height - GameConstants::TouchRectangleSize,
-                    windowBounds.Width,
-                    windowBounds.Height
-                    ),
-                m_textBrush.Get()
-                );
-*/
-            // Draw the cross hairs
-/*            d2dContext->DrawLine(
-                D2D1::Point2F(windowBounds.Width / 2.0f - GameConstants::CrossHairHalfSize, windowBounds.Height / 2.0f),
-                D2D1::Point2F(windowBounds.Width / 2.0f + GameConstants::CrossHairHalfSize, windowBounds.Height / 2.0f),
-                m_textBrush.Get(),
-                3.0f
-                );
-            d2dContext->DrawLine(
-                D2D1::Point2F(windowBounds.Width / 2.0f, windowBounds.Height / 2.0f - GameConstants::CrossHairHalfSize),
-                D2D1::Point2F(windowBounds.Width / 2.0f, windowBounds.Height / 2.0f + GameConstants::CrossHairHalfSize),
-                m_textBrush.Get(),
-                3.0f
-                );
-  */      }
+		}
     }
 }
 
