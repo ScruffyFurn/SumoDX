@@ -25,7 +25,7 @@ SumoDX::SumoDX():
     
     m_gameActive(false)
 {
-    //m_topScore.totalHits = 0;
+    m_topScore.bestRoundTime = 0;
 }
 
 //----------------------------------------------------------------------
@@ -197,26 +197,18 @@ GameState SumoDX::RunGame()
 	//did either leave the mat?
 	if (abs(XMVectorGetY(XMVector3Length(m_player->VectorPosition()))) > 10.0f)
 	{
+		//player lost, place the ringout time into the score variable but don't save.
+		m_topScore.bestRoundTime = m_timer->PlayingTime();
 		return GameState::PlayerLost;
 	}
 	if (abs(XMVectorGetY(XMVector3Length(m_enemy->VectorPosition()))) > 10.0f)
 	{
+		//player won, save his time if it is a new high score.
+		m_topScore.bestRoundTime = m_timer->PlayingTime();
+		SaveHighScore();
 		return GameState::GameComplete;
 	}
 
-	/*
-    
-        if (m_totalHits > m_topScore.totalHits)
-        {
-            // There is a new high score so save it.
-            m_topScore.totalHits = m_totalHits;
-            m_topScore.totalShots = m_totalShots;
-            m_topScore.levelCompleted = m_currentLevel;
-
-            SaveHighScore();
-		}
-       
-	*/
     return GameState::Active;
 }
 
@@ -289,7 +281,6 @@ void SumoDX::SaveState()
 void SumoDX::LoadState()
 {
     m_gameActive = m_savedState->LoadBool(":GameActive", m_gameActive);
-   
 
     if (m_gameActive)
     {
@@ -313,8 +304,12 @@ void SumoDX::LoadState()
 
 void SumoDX::SaveHighScore()
 {
-    m_savedState->SaveInt32(":HighScore:LevelCompleted", m_topScore.bestRoundTime);
+	int currentBest = m_savedState->LoadInt32(":HighScore:LevelCompleted", 0);
 
+	if (currentBest==NULL || currentBest > m_topScore.bestRoundTime)
+	{
+		m_savedState->SaveInt32(":HighScore:LevelCompleted", m_topScore.bestRoundTime);
+	}
 }
 
 //----------------------------------------------------------------------

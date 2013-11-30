@@ -203,7 +203,7 @@ void GameInfoOverlay::SetGameLoading(uint32 dots)
 
 //----------------------------------------------------------------------
 
-void GameInfoOverlay::SetGameStats()
+void GameInfoOverlay::SetGameStats(int bestTime)
 {
     int length;
     Platform::String^ string;
@@ -225,7 +225,8 @@ void GameInfoOverlay::SetGameStats()
     length = swprintf_s(
         wsbuffer,
         bufferLength,
-        L"ADD HERE"
+        L"Best Ring Out Time: %d",
+		bestTime
         );
     string = ref new Platform::String(wsbuffer, length);
     m_d2dContext->DrawText(
@@ -247,7 +248,7 @@ void GameInfoOverlay::SetGameStats()
 
 //----------------------------------------------------------------------
 
-void GameInfoOverlay::SetGameOver(bool win)
+void GameInfoOverlay::SetGameOver(bool win, int bestTime)
 {
     int length;
     Platform::String^ string;
@@ -278,7 +279,8 @@ void GameInfoOverlay::SetGameOver(bool win)
     length = swprintf_s(
         wsbuffer,
         bufferLength,
-        L"ADD HERE"
+        L"Ring Out Time: %d",
+		bestTime
         
         );
     m_d2dContext->DrawText(
@@ -310,7 +312,7 @@ void GameInfoOverlay::SetLevelStart()
     m_d2dContext->SetTransform(D2D1::Matrix3x2F::Identity());
     m_d2dContext->FillRectangle(&titleRectangle, m_backgroundBrush.Get());
     m_d2dContext->FillRectangle(&bodyRectangle, m_backgroundBrush.Get());
-    length = swprintf_s(wsbuffer, bufferLength, L"ADD HERE");
+    length = swprintf_s(wsbuffer, bufferLength, L"Get Ready!!");
     m_d2dContext->DrawText(
         wsbuffer,
         length,
@@ -320,7 +322,7 @@ void GameInfoOverlay::SetLevelStart()
         );
 
     
-    string = ref new Platform::String(wsbuffer, length);
+    string = "Fight!";
     m_d2dContext->DrawText(
         string->Data(),
         string->Length(),

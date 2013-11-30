@@ -465,23 +465,19 @@ void DirectXApp::Update()
 		//otherwise continue on as normal
 		else
 		{
+			//instruct the game to run one update
 			GameState runState = m_game->RunGame();
+
+			//Now check the returned runState of the game after that update.
 			switch (runState)
 			{
+			//If the player lost the game.
 			case GameState::PlayerLost:
 				SetAction(GameInfoOverlayCommand::TapToContinue);
 				SetGameInfoOverlay(GameInfoOverlayState::GameOverLost);
 				ShowGameInfoOverlay();
 				m_updateState = UpdateEngineState::WaitingForPress;
 				m_pressResult = PressResultState::LoadGame;
-				break;
-
-			case GameState::LevelComplete:
-				SetAction(GameInfoOverlayCommand::PleaseWait);
-				SetGameInfoOverlay(GameInfoOverlayState::GameStart);
-				ShowGameInfoOverlay();
-				m_updateState = UpdateEngineState::WaitingForResources;
-				m_pressResult = PressResultState::Play;
 				break;
 
 			case GameState::GameComplete:
@@ -754,7 +750,7 @@ void DirectXApp::SetGameInfoOverlay(GameInfoOverlayState state)
 
     case GameInfoOverlayState::GameStats:
         m_renderer->InfoOverlay()->SetGameStats(
-           
+			(int)(m_game->HighScore().bestRoundTime)
             );
         break;
 
@@ -769,21 +765,15 @@ void DirectXApp::SetGameInfoOverlay(GameInfoOverlayState state)
 
     case GameInfoOverlayState::GameOverWon:
         m_renderer->InfoOverlay()->SetGameOver(
-            true
-         //   m_game->LevelCompleted() + 1,
-         //   m_game->TotalHits(),
-         //   m_game->TotalShots(),
-         //   m_game->HighScore().totalHits
+            true,
+			(int)(m_game->HighScore().bestRoundTime)
             );
         break;
 
     case GameInfoOverlayState::GameOverLost:
         m_renderer->InfoOverlay()->SetGameOver(
-            false
-         //   m_game->LevelCompleted(),
-         //   m_game->TotalHits(),
-        //    m_game->TotalShots(),
-         //   m_game->HighScore().totalHits
+            false,
+			(int)(m_game->HighScore().bestRoundTime)
             );
         break;
 

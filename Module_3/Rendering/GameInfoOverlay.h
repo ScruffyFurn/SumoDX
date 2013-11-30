@@ -48,8 +48,8 @@ internal:
     void CreateDpiDependentResources(float dpi);
 
     void SetGameLoading(uint32 dots);
-    void SetGameStats();
-    void SetGameOver(bool win);
+	void SetGameStats(int bestTime);
+    void SetGameOver(bool win, int bestTime);
     void SetLevelStart();
     void SetPause();
     void SetAction(GameInfoOverlayCommand action);
