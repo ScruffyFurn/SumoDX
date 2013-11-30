@@ -37,7 +37,7 @@
 //     SumoDX (m_game) - this object handles all the game specific logic and game dynamics.
 //     GameRenderer (m_renderer) - This object handles all the graphics rendering for the game.
 //
-// DirectXApp registers for of all the necessary Windows Store app events to maintain and control all state transitions.
+// DirectXApp registers all of the necessary Windows Store app events to maintain and control all state transitions.
 
 #include "SumoDX.h"
 
@@ -144,7 +144,7 @@ private:
 
     MoveLookController^                                 m_controller;
     GameRenderer^                                       m_renderer;
-    SumoDX^                                       m_game;
+    SumoDX^												m_game;
 
     UpdateEngineState                                   m_updateState;
     UpdateEngineState                                   m_updateStateNext;
@@ -157,7 +157,7 @@ private:
 ref class DirectXAppSource : Windows::ApplicationModel::Core::IFrameworkViewSource
 {
 public:
-    virtual Windows::ApplicationModel::Core::IFrameworkView^ CreateView();
+	virtual Windows::ApplicationModel::Core::IFrameworkView^ CreateView();
 };
 
 
