@@ -35,7 +35,7 @@ enum class GameState
 	Waiting,
 	Active,
 	LevelComplete,
-	TimeExpired,
+	PlayerLost,
 	GameComplete,
 };
 

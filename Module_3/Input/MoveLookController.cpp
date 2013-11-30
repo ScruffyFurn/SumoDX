@@ -702,8 +702,10 @@ bool MoveLookController::Active()
 
 void MoveLookController::Update()
 {
+	//check for any gamepad input.
     UpdateGameController();
 
+	//check for any mouses input.
     if (m_moveInUse)
     {
         // Move control.

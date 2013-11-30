@@ -114,26 +114,41 @@ void SumoDX::Initialize(
 
 void SumoDX::LoadGame()
 {
-   // m_player->Position(XMFLOAT3 (0.0f, -1.3f, 4.0f));
-	/*
-    m_camera->SetViewParams(
-        m_player->Position(),            // Eye point in world coordinates.
-        XMFLOAT3 (0.0f, 0.7f, 0.0f),     // Look at point in world coordinates.
-        XMFLOAT3 (0.0f, 1.0f, 0.0f)      // The Up vector for the camera.
-        );
-		*/
+	//reset player and enemy
+	m_player->Position(XMFLOAT3(-3.0f, 0.5f, 0.0f));
+	m_enemy->Position(XMFLOAT3(3.0f, 0.5f, 0.0f));
+
+	//reset camera
+	m_camera->SetViewParams(
+		XMFLOAT3(0, 7, 10),// Eye point in world coordinates.
+		XMFLOAT3(0.0f, -5.0f, 0.0f),// Look at point in world coordinates.
+		XMFLOAT3(0.0f, 1.0f, 0.0f)      // The Up vector for the camera.
+		);
     m_controller->Pitch(m_camera->Pitch());
     m_controller->Yaw(m_camera->Yaw());
    
+	//reset other things
 	m_levelDuration = 0;
-
-  
-    m_gameActive = false;
-  
+	m_gameActive = false;
     m_timer->Reset();
 }
 
 
+//----------------------------------------------------------------------
+
+void SumoDX::SetCurrentLevelToSavedState()
+{
+	if (m_gameActive)
+	{
+
+			// Middle of a level so restart where left off.
+			m_levelDuration = m_savedState->LoadSingle(":LevelDuration", 0.0f);
+
+			m_timer->Reset();
+			m_timer->PlayingTime(m_savedState->LoadSingle(":LevelPlayingTime", 0.0f));
+
+	}
+}
 
 
 
@@ -182,7 +197,7 @@ GameState SumoDX::RunGame()
 	//did either leave the mat?
 	if (abs(XMVectorGetY(XMVector3Length(m_player->VectorPosition()))) > 10.0f)
 	{
-		return GameState::TimeExpired;
+		return GameState::PlayerLost;
 	}
 	if (abs(XMVectorGetY(XMVector3Length(m_enemy->VectorPosition()))) > 10.0f)
 	{
@@ -199,8 +214,7 @@ GameState SumoDX::RunGame()
             m_topScore.levelCompleted = m_currentLevel;
 
             SaveHighScore();
-        }
-        return GameState::TimeExpired;
+		}
        
 	*/
     return GameState::Active;
@@ -266,7 +280,7 @@ void SumoDX::SaveState()
     m_savedState->SaveBool(":GameActive", m_gameActive);
    
     m_savedState->SaveXMFLOAT3(":PlayerPosition", m_player->Position());
-    m_savedState->SaveXMFLOAT3(":PlayerLookDirection", m_controller->LookDirection());
+    m_savedState->SaveXMFLOAT3(":EnemyPosition", m_enemy->Position());
 
  }
 
@@ -281,30 +295,17 @@ void SumoDX::LoadState()
     {
         // Loading from the last known state means the game wasn't finished when it was last played,
         // so set the current level.
+		//m_difficulty =
+		//m_levelDuration = 
 
-       
-
-        // Reload the current player position and set both the camera and the controller
-        // with the current Look Direction.
-       // m_player->Position(m_savedState->LoadXMFLOAT3(":PlayerPosition", XMFLOAT3(0.0f, 0.0f, 0.0f)));
-       // m_camera->Eye(m_player->Position());
-       // m_camera->LookDirection(m_savedState->LoadXMFLOAT3(":PlayerLookDirection", XMFLOAT3(0.0f, 0.0f, 1.0f)) );
-       // m_controller->Pitch(m_camera->Pitch());
-        //m_controller->Yaw(m_camera->Yaw());
+        // Reload the current player and enemy position.
+		m_player->Position(m_savedState->LoadXMFLOAT3(":PlayerPosition", XMFLOAT3(0.0f, 0.0f, 0.0f)));
+	    m_enemy->Position(m_savedState->LoadXMFLOAT3(":EnemyPosition", XMFLOAT3(0.0f, 0.0f, 0.0f)));
     }
     else
     {
-        
-    }
-}
-
-//----------------------------------------------------------------------
-
-void SumoDX::SetCurrentLevelToSavedState()
-{
-    if (m_gameActive)
-    {
-       
+		m_difficulty = 0;
+		//m_levelDuration = 0;
     }
 }
 

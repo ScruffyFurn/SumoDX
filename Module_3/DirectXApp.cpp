@@ -19,6 +19,22 @@ using namespace Windows::UI::Core;
 using namespace Windows::UI::Input;
 using namespace Windows::UI::ViewManagement;
 
+[Platform::MTAThread]
+int main(Platform::Array<Platform::String^>^)
+{
+	auto directXAppSource = ref new DirectXAppSource();
+	CoreApplication::Run(directXAppSource);
+	return 0;
+}
+
+//--------------------------------------------------------------------------------------
+
+IFrameworkView^ DirectXAppSource::CreateView()
+{
+	return ref new DirectXApp();
+}
+
+//--------------------------------------------------------------------------------------
 
 DirectXApp::DirectXApp() :
     m_windowClosed(false),
@@ -45,9 +61,146 @@ void DirectXApp::Initialize(
     CoreApplication::Resuming +=
         ref new EventHandler<Platform::Object^>(this, &DirectXApp::OnResuming);
 
-    m_controller = ref new MoveLookController();
+	//The three main classes in our game!
+	m_game = ref new SumoDX();
     m_renderer = ref new GameRenderer();
-    m_game = ref new SumoDX();
+	m_controller = ref new MoveLookController();
+}
+
+//--------------------------------------------------------------------------------------
+
+void DirectXApp::OnActivated(
+	_In_ CoreApplicationView^ /* applicationView */,
+	_In_ IActivatedEventArgs^ /* args */
+	)
+{
+	CoreWindow::GetForCurrentThread()->Activated +=
+		ref new TypedEventHandler<CoreWindow^, WindowActivatedEventArgs^>(this, &DirectXApp::OnWindowActivationChanged);
+	CoreWindow::GetForCurrentThread()->Activate();
+}
+
+//--------------------------------------------------------------------------------------
+
+void DirectXApp::OnWindowActivationChanged(
+	_In_ Windows::UI::Core::CoreWindow^ /* sender */,
+	_In_ Windows::UI::Core::WindowActivatedEventArgs^ args
+	)
+{
+	if (args->WindowActivationState == CoreWindowActivationState::Deactivated)
+	{
+		m_haveFocus = false;
+
+		switch (m_updateState)
+		{
+		case UpdateEngineState::Dynamics:
+			// From Dynamic mode, when coming out of Deactivated rather than going directly back into game play
+			// go to the paused state waiting for user input to continue
+			m_updateStateNext = UpdateEngineState::WaitingForPress;
+			m_pressResult = PressResultState::Continue;
+			SetGameInfoOverlay(GameInfoOverlayState::Pause);
+			ShowGameInfoOverlay();
+			m_game->PauseGame();
+			m_updateState = UpdateEngineState::Deactivated;
+			SetAction(GameInfoOverlayCommand::None);
+			m_renderNeeded = true;
+			break;
+
+		case UpdateEngineState::WaitingForResources:
+		case UpdateEngineState::WaitingForPress:
+			m_updateStateNext = m_updateState;
+			m_updateState = UpdateEngineState::Deactivated;
+			SetAction(GameInfoOverlayCommand::None);
+			ShowGameInfoOverlay();
+			m_renderNeeded = true;
+			break;
+		}
+		// Don't have focus so shutdown input processing
+		m_controller->Active(false);
+	}
+	else if (args->WindowActivationState == CoreWindowActivationState::CodeActivated
+		|| args->WindowActivationState == CoreWindowActivationState::PointerActivated)
+	{
+		m_haveFocus = true;
+
+		if (m_updateState == UpdateEngineState::Deactivated)
+		{
+			m_updateState = m_updateStateNext;
+
+			if (m_updateState == UpdateEngineState::WaitingForPress)
+			{
+				SetAction(GameInfoOverlayCommand::TapToContinue);
+				m_controller->WaitForPress(m_renderer->GameInfoOverlayUpperLeft(), m_renderer->GameInfoOverlayLowerRight());
+			}
+			else if (m_updateStateNext == UpdateEngineState::WaitingForResources)
+			{
+				SetAction(GameInfoOverlayCommand::PleaseWait);
+			}
+		}
+	}
+}
+
+//--------------------------------------------------------------------------------------
+
+void DirectXApp::OnSuspending(
+	_In_ Platform::Object^ /* sender */,
+	_In_ SuspendingEventArgs^ args
+	)
+{
+	// Save application state.
+	switch (m_updateState)
+	{
+	case UpdateEngineState::Dynamics:
+		// Game is in the active game play state, Stop Game Timer and Pause play and save state
+		SetAction(GameInfoOverlayCommand::None);
+		SetGameInfoOverlay(GameInfoOverlayState::Pause);
+		m_updateStateNext = UpdateEngineState::WaitingForPress;
+		m_pressResult = PressResultState::Continue;
+		m_game->PauseGame();
+		break;
+
+	case UpdateEngineState::WaitingForResources:
+	case UpdateEngineState::WaitingForPress:
+		m_updateStateNext = m_updateState;
+		break;
+
+	default:
+		// any other state don't save as next state as they are trancient states and have already set m_updateStateNext
+		break;
+	}
+	m_updateState = UpdateEngineState::Suspended;
+
+	m_controller->Active(false);
+	m_game->OnSuspending();
+
+	// Hint to the driver that the app is entering an idle state and that its memory
+	// can be temporarily used for other apps.
+	m_renderer->Trim();
+}
+
+//--------------------------------------------------------------------------------------
+
+void DirectXApp::OnResuming(
+	_In_ Platform::Object^ /* sender */,
+	_In_ Platform::Object^ /* args */
+	)
+{
+	if (m_haveFocus)
+	{
+		m_updateState = m_updateStateNext;
+	}
+	else
+	{
+		m_updateState = UpdateEngineState::Deactivated;
+	}
+
+	if (m_updateState == UpdateEngineState::WaitingForPress)
+	{
+		SetAction(GameInfoOverlayCommand::TapToContinue);
+		m_controller->WaitForPress(m_renderer->GameInfoOverlayUpperLeft(), m_renderer->GameInfoOverlayLowerRight());
+	}
+	m_game->OnResuming();
+	ShowGameInfoOverlay();
+	m_renderNeeded = true;
 }
 
 //--------------------------------------------------------------------------------------
@@ -121,7 +274,7 @@ void DirectXApp::Load(
             // In the middle of a game so spin up the async task to load the level.
             create_task([this]()
             {
-                //return m_game->LoadLevelAsync();
+                //Place an asyc level load call here.
 
             }).then([this]()
             {
@@ -129,7 +282,8 @@ void DirectXApp::Load(
                 // again the finalize code needs to run in the same thread
                 // context as the m_renderer object was created because the D3D
                 // device context can ONLY be accessed on a single thread.
-               // m_game->FinalizeLoadLevel();
+
+               // Place your finilize level loading call here;
                 m_game->SetCurrentLevelToSavedState();
                 m_updateState = UpdateEngineState::ResourcesLoaded;
 
@@ -140,8 +294,49 @@ void DirectXApp::Load(
 
 //--------------------------------------------------------------------------------------
 
+void DirectXApp::InitializeGameState()
+{
+	// Set up the initial state machine for handling Game playing state
+	if (m_game->GameActive())
+	{
+		// The last time the game terminated it was in the middle
+		// of a level.
+		// We are waiting for the user to continue the game.
+		m_updateState = UpdateEngineState::WaitingForResources;
+		m_pressResult = PressResultState::Continue;
+		SetGameInfoOverlay(GameInfoOverlayState::Pause);
+		SetAction(GameInfoOverlayCommand::PleaseWait);
+	}
+	else if (!m_game->GameActive() && (m_game->HighScore().bestRoundTime > 0))
+	{
+		// The last time the game terminated the game had been completed.
+		// Show the high score.
+		// We are waiting for the user to acknowledge the high score and start a new game.
+		// The level resources for the first level will be loaded later.
+		m_updateState = UpdateEngineState::WaitingForPress;
+		m_pressResult = PressResultState::LoadGame;
+		SetGameInfoOverlay(GameInfoOverlayState::GameStats);
+		m_controller->WaitForPress(m_renderer->GameInfoOverlayUpperLeft(), m_renderer->GameInfoOverlayLowerRight());
+		SetAction(GameInfoOverlayCommand::TapToContinue);
+	}
+	else
+	{
+		// This is either the first time the game has run or
+		// the last time the game terminated the level was completed.
+		// We are waiting for the user to begin the next level.
+		m_updateState = UpdateEngineState::WaitingForResources;
+		m_pressResult = PressResultState::Play;
+		SetGameInfoOverlay(GameInfoOverlayState::GameStart);
+		SetAction(GameInfoOverlayCommand::PleaseWait);
+	}
+	ShowGameInfoOverlay();
+}
+
+//--------------------------------------------------------------------------------------
+
 void DirectXApp::Run()
 {
+	//The main game loop.
     while (!m_windowClosed)
     {
         if (m_visible)
@@ -158,8 +353,11 @@ void DirectXApp::Run()
                 }
                 // otherwise fall through and do normal processing to get the rendering handled.
             default:
+				//process any new events.
                 CoreWindow::GetForCurrentThread()->Dispatcher->ProcessEvents(CoreProcessEventsOption::ProcessAllIfPresent);
-                Update();
+				//Enter the Update stage of the game and apply all of the state and game logic for the current state of the game.
+				Update();
+				//Finally, render the new state of the game to the screen.
                 m_renderer->Render();
                 m_renderNeeded = false;
             }
@@ -171,6 +369,145 @@ void DirectXApp::Run()
     }
     m_game->OnSuspending();  // exiting due to window close.  Make sure to save state.
 }
+
+//--------------------------------------------------------------------------------------
+
+void DirectXApp::Update()
+{
+	static uint32 loadCount = 0;
+
+	//Signal the controller to update and check for any user input.
+	m_controller->Update();
+
+	switch (m_updateState)
+	{
+	//If we are waiting on resources
+	case UpdateEngineState::WaitingForResources:
+		// Waiting for initial load.  Display an update once per 60 updates.
+		loadCount++;
+		if ((loadCount % 60) == 0)
+		{
+			m_loadingCount++;
+			SetGameInfoOverlay(m_gameInfoOverlayState);
+		}
+		break;
+
+    //Requested resources have been loaded, transition to the next state.
+	case UpdateEngineState::ResourcesLoaded:
+		switch (m_pressResult)
+		{
+		case PressResultState::LoadGame:
+			SetGameInfoOverlay(GameInfoOverlayState::GameStats);
+			break;
+
+		case PressResultState::Play:
+			SetGameInfoOverlay(GameInfoOverlayState::GameStart);
+			break;
+
+		case PressResultState::Continue:
+			SetGameInfoOverlay(GameInfoOverlayState::Pause);
+			break;
+		}
+		m_updateState = UpdateEngineState::WaitingForPress;
+		SetAction(GameInfoOverlayCommand::TapToContinue);
+		m_controller->WaitForPress(m_renderer->GameInfoOverlayUpperLeft(), m_renderer->GameInfoOverlayLowerRight());
+		ShowGameInfoOverlay();
+		m_renderNeeded = true;
+		break;
+
+	//If we are waiting for user input due to a pop-up message.
+	case UpdateEngineState::WaitingForPress:
+		if (m_controller->IsPressComplete())
+		{
+			switch (m_pressResult)
+			{
+			case PressResultState::LoadGame:
+				m_updateState = UpdateEngineState::WaitingForResources;
+				m_pressResult = PressResultState::Play;
+				m_controller->Active(false);
+				m_game->LoadGame();
+				SetAction(GameInfoOverlayCommand::PleaseWait);
+				SetGameInfoOverlay(GameInfoOverlayState::GameStart);
+				ShowGameInfoOverlay();
+
+				m_updateState = UpdateEngineState::ResourcesLoaded;
+				break;
+
+			case PressResultState::Play:
+				m_updateState = UpdateEngineState::Dynamics;
+				HideGameInfoOverlay();
+				m_controller->Active(true);
+				m_game->StartLevel();
+				break;
+
+			case PressResultState::Continue:
+				m_updateState = UpdateEngineState::Dynamics;
+				HideGameInfoOverlay();
+				m_controller->Active(true);
+				m_game->ContinueGame();
+				break;
+			}
+		}
+		break;
+
+    //Or if we are in the main game play state.
+	case UpdateEngineState::Dynamics:
+		//if the player has pressed a button to pause the game.
+		if (m_controller->IsPauseRequested())
+		{
+			m_game->PauseGame();
+			SetGameInfoOverlay(GameInfoOverlayState::Pause);
+			SetAction(GameInfoOverlayCommand::TapToContinue);
+			m_updateState = UpdateEngineState::WaitingForPress;
+			m_pressResult = PressResultState::Continue;
+			ShowGameInfoOverlay();
+		}
+		//otherwise continue on as normal
+		else
+		{
+			GameState runState = m_game->RunGame();
+			switch (runState)
+			{
+			case GameState::PlayerLost:
+				SetAction(GameInfoOverlayCommand::TapToContinue);
+				SetGameInfoOverlay(GameInfoOverlayState::GameOverLost);
+				ShowGameInfoOverlay();
+				m_updateState = UpdateEngineState::WaitingForPress;
+				m_pressResult = PressResultState::LoadGame;
+				break;
+
+			case GameState::LevelComplete:
+				SetAction(GameInfoOverlayCommand::PleaseWait);
+				SetGameInfoOverlay(GameInfoOverlayState::GameStart);
+				ShowGameInfoOverlay();
+				m_updateState = UpdateEngineState::WaitingForResources;
+				m_pressResult = PressResultState::Play;
+				break;
+
+			case GameState::GameComplete:
+				SetAction(GameInfoOverlayCommand::TapToContinue);
+				SetGameInfoOverlay(GameInfoOverlayState::GameOverWon);
+				ShowGameInfoOverlay();
+				m_updateState = UpdateEngineState::WaitingForPress;
+				m_pressResult = PressResultState::LoadGame;
+				break;
+			}
+		}
+
+		if (m_updateState == UpdateEngineState::WaitingForPress)
+		{
+			// Transitioning state, so enable waiting for the press event
+			m_controller->WaitForPress(m_renderer->GameInfoOverlayUpperLeft(), m_renderer->GameInfoOverlayLowerRight());
+		}
+		if (m_updateState == UpdateEngineState::WaitingForResources)
+		{
+			// Transitioning state, so shut down the input controller until resources are loaded
+			m_controller->Active(false);
+		}
+		break;
+	}
+}
+
 
 //--------------------------------------------------------------------------------------
 
@@ -231,17 +568,7 @@ void DirectXApp::OnDisplayContentsInvalidated(_In_ DisplayInformation^ sender, _
     m_renderNeeded = true;
 }
 
-//--------------------------------------------------------------------------------------
 
-void DirectXApp::OnActivated(
-    _In_ CoreApplicationView^ /* applicationView */,
-    _In_ IActivatedEventArgs^ /* args */
-    )
-{
-    CoreWindow::GetForCurrentThread()->Activated +=
-        ref new TypedEventHandler<CoreWindow^, WindowActivatedEventArgs^>(this, &DirectXApp::OnWindowActivationChanged);
-    CoreWindow::GetForCurrentThread()->Activate();
-}
 
 //--------------------------------------------------------------------------------------
 
@@ -251,301 +578,6 @@ void DirectXApp::OnVisibilityChanged(
     )
 {
     m_visible = args->Visible;
-}
-
-//--------------------------------------------------------------------------------------
-
-void DirectXApp::InitializeGameState()
-{
-    // Set up the initial state machine for handling Game playing state
-    if (m_game->GameActive())
-    {
-        // The last time the game terminated it was in the middle
-        // of a level.
-        // We are waiting for the user to continue the game.
-        m_updateState = UpdateEngineState::WaitingForResources;
-        m_pressResult = PressResultState::Continue;
-        SetGameInfoOverlay(GameInfoOverlayState::Pause);
-        SetAction(GameInfoOverlayCommand::PleaseWait);
-    }
-    else if (!m_game->GameActive() && (m_game->HighScore().bestRoundTime > 0))
-    {
-        // The last time the game terminated the game had been completed.
-        // Show the high score.
-        // We are waiting for the user to acknowledge the high score and start a new game.
-        // The level resources for the first level will be loaded later.
-        m_updateState = UpdateEngineState::WaitingForPress;
-        m_pressResult = PressResultState::LoadGame;
-        SetGameInfoOverlay(GameInfoOverlayState::GameStats);
-        m_controller->WaitForPress(m_renderer->GameInfoOverlayUpperLeft(), m_renderer->GameInfoOverlayLowerRight());
-        SetAction(GameInfoOverlayCommand::TapToContinue);
-    }
-    else
-    {
-        // This is either the first time the game has run or
-        // the last time the game terminated the level was completed.
-        // We are waiting for the user to begin the next level.
-        m_updateState = UpdateEngineState::WaitingForResources;
-        m_pressResult = PressResultState::Play;
-        SetGameInfoOverlay(GameInfoOverlayState::GameStart);
-        SetAction(GameInfoOverlayCommand::PleaseWait);
-    }
-    ShowGameInfoOverlay();
-}
-
-//--------------------------------------------------------------------------------------
-
-void DirectXApp::Update()
-{
-    static uint32 loadCount = 0;
-
-    m_controller->Update();
-
-    switch (m_updateState)
-    {
-    case UpdateEngineState::WaitingForResources:
-        // Waiting for initial load.  Display an update once per 60 updates.
-        loadCount++;
-        if ((loadCount % 60) == 0)
-        {
-            m_loadingCount++;
-            SetGameInfoOverlay(m_gameInfoOverlayState);
-        }
-        break;
-
-    case UpdateEngineState::ResourcesLoaded:
-        switch (m_pressResult)
-        {
-        case PressResultState::LoadGame:
-            SetGameInfoOverlay(GameInfoOverlayState::GameStats);
-            break;
-
-        case PressResultState::Play:
-            SetGameInfoOverlay(GameInfoOverlayState::GameStart);
-            break;
-
-        case PressResultState::Continue:
-            SetGameInfoOverlay(GameInfoOverlayState::Pause);
-            break;
-        }
-        m_updateState = UpdateEngineState::WaitingForPress;
-        SetAction(GameInfoOverlayCommand::TapToContinue);
-        m_controller->WaitForPress(m_renderer->GameInfoOverlayUpperLeft(), m_renderer->GameInfoOverlayLowerRight());
-        ShowGameInfoOverlay();
-        m_renderNeeded = true;
-        break;
-
-    case UpdateEngineState::WaitingForPress:
-        if (m_controller->IsPressComplete())
-        {
-            switch (m_pressResult)
-            {
-            case PressResultState::LoadGame:
-                m_updateState = UpdateEngineState::WaitingForResources;
-                m_pressResult = PressResultState::Play;
-                m_controller->Active(false);
-                m_game->LoadGame();
-                SetAction(GameInfoOverlayCommand::PleaseWait);
-                SetGameInfoOverlay(GameInfoOverlayState::GameStart);
-                ShowGameInfoOverlay();
-
-				m_updateState = UpdateEngineState::ResourcesLoaded;
-                break;
-
-            case PressResultState::Play:
-                m_updateState = UpdateEngineState::Dynamics;
-                HideGameInfoOverlay();
-                m_controller->Active(true);
-                m_game->StartLevel();
-                break;
-
-            case PressResultState::Continue:
-                m_updateState = UpdateEngineState::Dynamics;
-                HideGameInfoOverlay();
-                m_controller->Active(true);
-                m_game->ContinueGame();
-                break;
-            }
-        }
-        break;
-	//the main game play state.
-    case UpdateEngineState::Dynamics:
-        if (m_controller->IsPauseRequested())
-        {
-            m_game->PauseGame();
-            SetGameInfoOverlay(GameInfoOverlayState::Pause);
-            SetAction(GameInfoOverlayCommand::TapToContinue);
-            m_updateState = UpdateEngineState::WaitingForPress;
-            m_pressResult = PressResultState::Continue;
-            ShowGameInfoOverlay();
-        }
-        else
-        {
-            GameState runState = m_game->RunGame();
-            switch (runState)
-            {
-            case GameState::TimeExpired:
-                SetAction(GameInfoOverlayCommand::TapToContinue);
-                SetGameInfoOverlay(GameInfoOverlayState::GameOverLost);
-                ShowGameInfoOverlay();
-                m_updateState = UpdateEngineState::WaitingForPress;
-                m_pressResult = PressResultState::LoadGame;
-                break;
-
-            case GameState::LevelComplete:
-                SetAction(GameInfoOverlayCommand::PleaseWait);
-                SetGameInfoOverlay(GameInfoOverlayState::GameStart);
-                ShowGameInfoOverlay();
-                m_updateState = UpdateEngineState::WaitingForResources;
-                m_pressResult = PressResultState::Play;
-                break;
-
-            case GameState::GameComplete:
-                SetAction(GameInfoOverlayCommand::TapToContinue);
-                SetGameInfoOverlay(GameInfoOverlayState::GameOverWon);
-                ShowGameInfoOverlay();
-                m_updateState  = UpdateEngineState::WaitingForPress;
-                m_pressResult = PressResultState::LoadGame;
-                break;
-            }
-        }
-
-        if (m_updateState == UpdateEngineState::WaitingForPress)
-        {
-            // Transitioning state, so enable waiting for the press event
-            m_controller->WaitForPress(m_renderer->GameInfoOverlayUpperLeft(), m_renderer->GameInfoOverlayLowerRight());
-        }
-        if (m_updateState == UpdateEngineState::WaitingForResources)
-        {
-            // Transitioning state, so shut down the input controller until resources are loaded
-            m_controller->Active(false);
-        }
-        break;
-    }
-}
-
-//--------------------------------------------------------------------------------------
-
-void DirectXApp::OnWindowActivationChanged(
-    _In_ Windows::UI::Core::CoreWindow^ /* sender */,
-    _In_ Windows::UI::Core::WindowActivatedEventArgs^ args
-    )
-{
-    if (args->WindowActivationState == CoreWindowActivationState::Deactivated)
-    {
-        m_haveFocus = false;
-
-        switch (m_updateState)
-        {
-        case UpdateEngineState::Dynamics:
-            // From Dynamic mode, when coming out of Deactivated rather than going directly back into game play
-            // go to the paused state waiting for user input to continue
-            m_updateStateNext = UpdateEngineState::WaitingForPress;
-            m_pressResult = PressResultState::Continue;
-            SetGameInfoOverlay(GameInfoOverlayState::Pause);
-            ShowGameInfoOverlay();
-            m_game->PauseGame();
-            m_updateState = UpdateEngineState::Deactivated;
-            SetAction(GameInfoOverlayCommand::None);
-            m_renderNeeded = true;
-            break;
-
-        case UpdateEngineState::WaitingForResources:
-        case UpdateEngineState::WaitingForPress:
-            m_updateStateNext = m_updateState;
-            m_updateState = UpdateEngineState::Deactivated;
-            SetAction(GameInfoOverlayCommand::None);
-            ShowGameInfoOverlay();
-            m_renderNeeded = true;
-            break;
-        }
-        // Don't have focus so shutdown input processing
-        m_controller->Active(false);
-    }
-    else if (args->WindowActivationState == CoreWindowActivationState::CodeActivated
-        || args->WindowActivationState == CoreWindowActivationState::PointerActivated)
-    {
-        m_haveFocus = true;
-
-        if (m_updateState == UpdateEngineState::Deactivated)
-        {
-            m_updateState = m_updateStateNext;
-
-            if (m_updateState == UpdateEngineState::WaitingForPress)
-            {
-                SetAction(GameInfoOverlayCommand::TapToContinue);
-                m_controller->WaitForPress(m_renderer->GameInfoOverlayUpperLeft(), m_renderer->GameInfoOverlayLowerRight());
-            }
-            else if (m_updateStateNext == UpdateEngineState::WaitingForResources)
-            {
-                SetAction(GameInfoOverlayCommand::PleaseWait);
-            }
-        }
-    }
-}
-
-//--------------------------------------------------------------------------------------
-
-void DirectXApp::OnSuspending(
-    _In_ Platform::Object^ /* sender */,
-    _In_ SuspendingEventArgs^ args
-    )
-{
-    // Save application state.
-    switch (m_updateState)
-    {
-    case UpdateEngineState::Dynamics:
-        // Game is in the active game play state, Stop Game Timer and Pause play and save state
-        SetAction(GameInfoOverlayCommand::None);
-        SetGameInfoOverlay(GameInfoOverlayState::Pause);
-        m_updateStateNext = UpdateEngineState::WaitingForPress;
-        m_pressResult = PressResultState::Continue;
-        m_game->PauseGame();
-        break;
-
-    case UpdateEngineState::WaitingForResources:
-    case UpdateEngineState::WaitingForPress:
-        m_updateStateNext = m_updateState;
-        break;
-
-    default:
-        // any other state don't save as next state as they are trancient states and have already set m_updateStateNext
-        break;
-    }
-    m_updateState = UpdateEngineState::Suspended;
-
-    m_controller->Active(false);
-    m_game->OnSuspending();
-
-    // Hint to the driver that the app is entering an idle state and that its memory
-    // can be temporarily used for other apps.
-    m_renderer->Trim();
-}
-
-//--------------------------------------------------------------------------------------
-
-void DirectXApp::OnResuming(
-    _In_ Platform::Object^ /* sender */,
-    _In_ Platform::Object^ /* args */
-    )
-{
-    if (m_haveFocus)
-    {
-        m_updateState = m_updateStateNext;
-    }
-    else
-    {
-        m_updateState = UpdateEngineState::Deactivated;
-    }
-
-    if (m_updateState == UpdateEngineState::WaitingForPress)
-    {
-        SetAction(GameInfoOverlayCommand::TapToContinue);
-        m_controller->WaitForPress(m_renderer->GameInfoOverlayUpperLeft(), m_renderer->GameInfoOverlayLowerRight());
-    }
-    m_game->OnResuming();
-    ShowGameInfoOverlay();
-    m_renderNeeded = true;
 }
 
 //--------------------------------------------------------------------------------------
@@ -801,20 +833,5 @@ void DirectXApp::HideTooSmall()
 
 //--------------------------------------------------------------------------------------
 
-IFrameworkView^ DirectXAppSource::CreateView()
-{
-    return ref new DirectXApp();
-}
 
-//--------------------------------------------------------------------------------------
-
-[Platform::MTAThread]
-int main(Platform::Array<Platform::String^>^)
-{
-    auto directXAppSource = ref new DirectXAppSource();
-    CoreApplication::Run(directXAppSource);
-    return 0;
-}
-
-//--------------------------------------------------------------------------------------
 
