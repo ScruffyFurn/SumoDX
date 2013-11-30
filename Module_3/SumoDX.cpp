@@ -10,8 +10,6 @@
 
 #include "../Utilities/DirectXSample.h"
 
-#include "../GameObjects/Animate.h"
-
 #include "../Audio/MediaReader.h"
 #include "../GameObjects/Cylinder.h"
 
@@ -48,8 +46,6 @@ void SumoDX::Initialize(
     m_audioController = ref new Audio;
     m_audioController->CreateDeviceIndependentResources();
 
-   
-    m_objects = std::vector<GameObject^>();
     m_renderObjects = std::vector<GameObject^>();
     
 
@@ -62,23 +58,17 @@ void SumoDX::Initialize(
     // The box will be used to handle collisions and constrain the player in the world.
 	m_player = ref new SumoBlock();
 	m_player->Position(XMFLOAT3(-3.0f, 0.5f, 0.0f));
-	// It is added to the object list so it will be included in intersection calculations.
-    m_objects.push_back(m_player);
 	// It is added to the list of render objects so that it appears on screen.
 	m_renderObjects.push_back(m_player);
 
 	//Create the enemy
 	// The box will be used to handle collisions and constrain the player in the world.
-	m_enemy = ref new SumoBlock();
-	m_enemy->Position(XMFLOAT3(3.0f, 0.5f, 0.0f));
-	// It is added to the object list so it will be included in intersection calculations.
-	m_objects.push_back(m_enemy);
+	m_enemy = ref new AISumoBlock(XMFLOAT3(3.0f, 0.5f, 0.0f),m_player,GameConstants::Angry);
 	// It is added to the list of render objects so that it appears on screen.
 	m_renderObjects.push_back(m_enemy);
 
-	//tell the sumo's about their opponent
-	m_enemy->SetTarget(m_player);
-	m_player->SetTarget(m_enemy);
+	//tell the player about their new opponent
+	m_player->Target(m_enemy);
 
 	//set starting difficulty
 	m_difficulty = 0;// rand() % 3;
@@ -88,8 +78,6 @@ void SumoDX::Initialize(
 	//floor model
 	Cylinder^ cylinder;
 	cylinder = ref new Cylinder(XMFLOAT3(0.0f, -1.0f, 0.0f), 10.0f, XMFLOAT3(0.0f, 1.0f, 0.0f));
-	//cylinder->Active(true);
-	m_objects.push_back(cylinder);
 	m_renderObjects.push_back(cylinder);
 
     m_camera = ref new Camera;
@@ -237,44 +225,6 @@ void SumoDX::OnResuming()
 }
 
 //----------------------------------------------------------------------
-void SumoDX::DetermineAIActions(float deltaTime)
-{
-	m_delay -= deltaTime;
-
-	if (m_delay <= 0)
-	{
-		m_choice = rand() % 3;
-
-		//delay until next action
-		m_delay = (rand() % 3) + 1.0f;
-	}
-	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f);
-	XMVECTOR direction;
-	switch (m_choice)
-	{
-	case 1:
-		//push harder
-		direction = ((m_player->VectorPosition() - m_enemy->VectorPosition()));
-		XMVectorSetIntY(direction, 0);
-		m_enemy->Position(m_enemy->VectorPosition() + XMVector3Normalize(direction) * deltaTime * m_difficulty);
-		break;
-	case 2:
-		//dodge
-		direction = XMVector3Cross(m_player->VectorPosition() - m_enemy->VectorPosition(), up);
-		XMVectorSetIntY(direction, 0);
-		m_enemy->Position(m_enemy->VectorPosition() + XMVector3Normalize(direction) * deltaTime * (m_difficulty-1));
-		break;
-	default:
-		//move forward normally
-		direction = ((m_player->VectorPosition() - m_enemy->VectorPosition()));
-		XMVectorSetIntY(direction, 0);
-		m_enemy->Position(m_enemy->VectorPosition() + XMVector3Normalize(direction) * deltaTime);
-
-		break;
-	}
-}
-
-//----------------------------------------------------------------------
 
 void SumoDX::UpdateDynamics()
 {
@@ -294,7 +244,7 @@ void SumoDX::UpdateDynamics()
 		m_player->Position(m_player->VectorPosition() + m_player->VectorVelocity() * deltaTime);
 
 		//AI Update
-		DetermineAIActions(deltaTime);
+		m_enemy->DetermineAIActions(deltaTime);
 
 		//Check for player/enemy colision
 		float xDelta = m_enemy->Position().x - m_player->Position().x;

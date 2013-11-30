@@ -25,13 +25,6 @@ internal:
 		DirectX::XMFLOAT3 direction
 		);
 
-/*	virtual bool IsTouching(
-		DirectX::XMFLOAT3 point,
-		float radius,
-		_Out_ DirectX::XMFLOAT3 *contact,
-		_Out_ DirectX::XMFLOAT3 *normal
-		) override;
-		*/
 protected:
 	virtual void UpdatePosition() override;
 

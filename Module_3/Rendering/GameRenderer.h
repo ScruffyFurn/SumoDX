@@ -102,11 +102,11 @@ protected private:
     bool                                                m_levelResourcesLoaded;
     GameInfoOverlay^                                    m_gameInfoOverlay;
     GameHud^                                            m_gameHud;
-    SumoDX^                                       m_game;
+    SumoDX^												m_game;
 
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_sphereTexture;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_playerTexture;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_cylinderTexture;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_ceilingTexture;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_enemyTexture;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_floorTexture;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_wallsTexture;
 

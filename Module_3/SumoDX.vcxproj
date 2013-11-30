@@ -161,6 +161,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GameObjects\AISumoBlock.h" />
     <ClInclude Include="GameObjects\Cylinder.h" />
     <ClInclude Include="Meshes\CylinderMesh.h" />
     <ClInclude Include="Meshes\MeshObject.h" />
@@ -175,6 +176,7 @@
     <ClInclude Include="Utilities\PersistentState.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="GameObjects\AISumoBlock.cpp" />
     <ClCompile Include="GameObjects\Cylinder.cpp" />
     <ClCompile Include="Meshes\CylinderMesh.cpp" />
     <ClCompile Include="Meshes\MeshObject.cpp" />
@@ -186,7 +188,6 @@
     <ClCompile Include="Utilities\PersistentState.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GameObjects\Animate.h" />
     <ClInclude Include="Audio\Audio.h" />
     <ClInclude Include="GameObjects\Camera.h" />
     <ClInclude Include="Rendering\ConstantBuffers.h" />
@@ -200,7 +201,6 @@
     <ClInclude Include="Rendering\TargetTexture.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="GameObjects\Animate.cpp" />
     <ClCompile Include="Audio\Audio.cpp" />
     <ClCompile Include="GameObjects\Camera.cpp" />
     <ClCompile Include="GameObjects\GameObject.cpp" />
@@ -242,6 +242,8 @@
     </AppxManifest>
   </ItemGroup>
   <ItemGroup>
+    <Image Include="Resources\SumoBlue.dds" />
+    <Image Include="Resources\SumoRed.dds" />
     <Image Include="Resources\windows-sdk.png" />
     <Image Include="smallTile-sdk.scale-100.png">
       <DeploymentContent>true</DeploymentContent>

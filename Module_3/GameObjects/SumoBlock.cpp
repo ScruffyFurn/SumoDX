@@ -9,19 +9,17 @@ SumoBlock::SumoBlock()
 
 }
 
-SumoBlock::SumoBlock(
-	DirectX::XMFLOAT3 position,
-	SumoBlock^ target
-	)
+SumoBlock::SumoBlock(DirectX::XMFLOAT3 position, SumoBlock^ target)
 {
 	Initialize(position, target);
 }
+
 void SumoBlock::Initialize(DirectX::XMFLOAT3 position, SumoBlock^ target)
 {
 	m_target = target;
 	if (target != nullptr)
 	{
-		angle = XMVectorGetY(XMVector3AngleBetweenNormals(XMVector3Normalize(m_target->VectorPosition() - VectorPosition()), XMVector3Normalize(XMVectorSet(1.0f, 0.0f, 0.0f, 1.0f))));
+		m_angle = XMVectorGetY(XMVector3AngleBetweenNormals(XMVector3Normalize(m_target->VectorPosition() - VectorPosition()), XMVector3Normalize(XMVectorSet(1.0f, 0.0f, 0.0f, 1.0f))));
 	}
 	Position(position);
 	XMMATRIX mat1 = XMMatrixIdentity();
@@ -29,9 +27,14 @@ void SumoBlock::Initialize(DirectX::XMFLOAT3 position, SumoBlock^ target)
 }
 
 
-void SumoBlock::SetTarget(SumoBlock^ target)
+void SumoBlock::Target(SumoBlock^ target)
 {
 	m_target = target;
+}
+
+SumoBlock^ SumoBlock::Target()
+{
+	return m_target;
 }
 
 void SumoBlock::UpdatePosition()
@@ -41,15 +44,15 @@ void SumoBlock::UpdatePosition()
 		//Face the target.
 		XMVECTOR direction = XMVector3Normalize(m_target->VectorPosition() - VectorPosition());
 		float ans = XMVectorGetY(XMVector2AngleBetweenNormals(direction, XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f)));
-		angle = ans;
+		m_angle = ans;
 
 		//if you are in the upper arc
 		if (XMVectorGetZ(direction) > 0)
 		{
-			angle *= -1;
+			m_angle *= -1;
 		}
 
-		XMStoreFloat4x4(&m_modelMatrix, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixRotationY(angle) * XMMatrixTranslation(m_position.x, m_position.y, m_position.z));
+		XMStoreFloat4x4(&m_modelMatrix, XMMatrixScaling(1.0f, 1.0f, 1.0f) * XMMatrixRotationY(m_angle) * XMMatrixTranslation(m_position.x, m_position.y, m_position.z));
 	}
 	else
 	{

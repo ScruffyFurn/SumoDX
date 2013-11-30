@@ -53,4 +53,6 @@ namespace GameConstants
         static const float MinVelocity          = 0.05f;    // The minimum contact velocity required to make a sound.
         static const float MinAdjustment        = 0.2f;     // The minimum volume adjustment based on contact velocity.
     }
+
+	enum Behavior{ Easy = 0, Angry, Smart, Max };
 };

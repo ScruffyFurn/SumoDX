@@ -185,21 +185,21 @@ task<void> GameRenderer::CreateGameDeviceResourcesAsync(_In_ SumoDX^ game)
 
     uint32 numElements = ARRAYSIZE(PNTVertexLayout);
     tasks.push_back(loader->LoadShaderAsync("VertexShader.cso", PNTVertexLayout, numElements, &m_vertexShader, &m_vertexLayout));
-    tasks.push_back(loader->LoadShaderAsync("VertexShaderFlat.cso", nullptr, numElements, &m_vertexShaderFlat, nullptr));
+   // tasks.push_back(loader->LoadShaderAsync("VertexShaderFlat.cso", nullptr, numElements, &m_vertexShaderFlat, nullptr));
     tasks.push_back(loader->LoadShaderAsync("PixelShader.cso", &m_pixelShader));
-    tasks.push_back(loader->LoadShaderAsync("PixelShaderFlat.cso", &m_pixelShaderFlat));
+  //  tasks.push_back(loader->LoadShaderAsync("PixelShaderFlat.cso", &m_pixelShaderFlat));
 
     // Make sure the previous versions if any of the textures are released.
-    m_sphereTexture = nullptr;
+	m_playerTexture = nullptr;
     m_cylinderTexture = nullptr;
-    m_ceilingTexture = nullptr;
+	m_enemyTexture = nullptr;
     m_floorTexture = nullptr;
     m_wallsTexture = nullptr;
 
     // Load Game specific textures.
-    tasks.push_back(loader->LoadTextureAsync("Resources\\seafloor.dds", nullptr, &m_sphereTexture));
+    tasks.push_back(loader->LoadTextureAsync("Resources\\SumoBlue.dds", nullptr, &m_playerTexture));
     tasks.push_back(loader->LoadTextureAsync("Resources\\metal_texture.dds", nullptr, &m_cylinderTexture));
-    tasks.push_back(loader->LoadTextureAsync("Resources\\cellceiling.dds", nullptr, &m_ceilingTexture));
+    tasks.push_back(loader->LoadTextureAsync("Resources\\SumoRed.dds", nullptr, &m_enemyTexture));
     tasks.push_back(loader->LoadTextureAsync("Resources\\cellfloor.dds", nullptr, &m_floorTexture));
     tasks.push_back(loader->LoadTextureAsync("Resources\\cellwall.dds", nullptr, &m_wallsTexture));
     tasks.push_back(create_task([]()
@@ -246,6 +246,26 @@ void GameRenderer::FinalizeCreateGameDeviceResources()
         m_d2dContext.Get()
         );
 	
+	Material^ playerMaterial = ref new Material(
+		XMFLOAT4(0.8f, 0.8f, 0.8f, .5f),
+		XMFLOAT4(1.0f, 1.0f, 1.0f, .5f),
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
+		15.0f,
+		m_playerTexture.Get(),
+		m_vertexShader.Get(),
+		m_pixelShader.Get()
+		);
+
+	Material^ enemyMaterial = ref new Material(
+		XMFLOAT4(0.8f, 0.8f, 0.8f, .5f),
+		XMFLOAT4(0.65f, 0.65f, 0.6f, .5f),
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
+		15.0f,
+		m_enemyTexture.Get(),
+		m_vertexShader.Get(),
+		m_pixelShader.Get()
+		);
+
 	Material^ cylinderMaterial = ref new Material(
 		XMFLOAT4(0.8f, 0.8f, 0.8f, .5f),
 		XMFLOAT4(0.8f, 0.8f, 0.8f, .5f),
@@ -259,17 +279,21 @@ void GameRenderer::FinalizeCreateGameDeviceResources()
     MeshObject^ sumoMesh = ref new SumoMesh(m_d3dDevice.Get());
    
 	MeshObject^ cylinderMesh = ref new CylinderMesh(m_d3dDevice.Get(), 26);
-  
 
     auto objects = m_game->RenderObjects();
 
     // Attach the textures to the appropriate game objects.
     for (auto object = objects.begin(); object != objects.end(); object++)
     {
-		if (SumoBlock^ sumoBlock = dynamic_cast<SumoBlock^>(*object))
+		if (AISumoBlock^ evilSumoBlock = dynamic_cast<AISumoBlock^>(*object))
+		{
+			evilSumoBlock->Mesh(sumoMesh);
+			evilSumoBlock->NormalMaterial(enemyMaterial);
+		}
+		else if (SumoBlock^ sumoBlock = dynamic_cast<SumoBlock^>(*object))
 		{
 			sumoBlock->Mesh(sumoMesh);
-			sumoBlock->NormalMaterial(cylinderMaterial);
+			sumoBlock->NormalMaterial(playerMaterial);
 		}
 		else if (Cylinder^ cylinder = dynamic_cast<Cylinder^>(*object))
 		{
