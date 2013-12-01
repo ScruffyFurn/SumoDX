@@ -418,7 +418,7 @@ void DirectXBase::CreateWindowSizeDependentResources()
         1
         );
 
-    // Create a view interface on the rendertarget to use on bind for mono or left eye view.
+    // Create a view interface on the rendertarget to use on bind.
     DX::ThrowIfFailed(
         m_d3dDevice->CreateRenderTargetView(
             backBuffer.Get(),

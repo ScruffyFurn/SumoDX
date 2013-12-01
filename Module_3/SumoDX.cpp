@@ -7,7 +7,7 @@
 
 #include "pch.h"
 #include "../Rendering/GameRenderer.h"
-
+#include <time.h>
 #include "../Utilities/DirectXSample.h"
 
 #include "../Audio/MediaReader.h"
@@ -53,6 +53,7 @@ void SumoDX::Initialize(
     m_savedState->Initialize(ApplicationData::Current->LocalSettings->Values, "Game");
 
     m_timer = ref new GameTimer();
+	srand(time(NULL));
 
     // Create a box primitive to represent the player.
     // The box will be used to handle collisions and constrain the player in the world.
@@ -63,7 +64,7 @@ void SumoDX::Initialize(
 
 	//Create the enemy
 	// The box will be used to handle collisions and constrain the player in the world.
-	m_enemy = ref new AISumoBlock(XMFLOAT3(3.0f, 0.5f, 0.0f),m_player,GameConstants::Angry);
+	m_enemy = ref new AISumoBlock(XMFLOAT3(3.0f, 0.5f, 0.0f), m_player, static_cast<GameConstants::Behavior>(rand() % 3));
 	// It is added to the list of render objects so that it appears on screen.
 	m_renderObjects.push_back(m_enemy);
 
@@ -184,7 +185,7 @@ GameState SumoDX::RunGame()
     // It returns the resulting state of game play after the interval has been executed.
     m_timer->Update();
 
-	//TODO: Remove debug camera
+	//update the camera to look where the user has specified.
 	m_camera->LookDirection(m_controller->LookDirection());
 	m_controller->Pitch(m_camera->Pitch());
 	m_controller->Yaw(m_camera->Yaw());

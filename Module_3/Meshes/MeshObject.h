@@ -7,8 +7,8 @@
 // the format of the geometry directly.
 // The primary method of the MeshObject is Render.  The default implementation
 // just sets the IndexBuffer, VertexBuffer and topology to a TriangleList and
-// makes a  DrawIndexed call on the context.  It assumes all other state has
-// already been set on the context.
+// makes a  DrawIndexed call on the context.  It assumes all other states have
+// been set on the context already.
 
 ref class MeshObject abstract
 {

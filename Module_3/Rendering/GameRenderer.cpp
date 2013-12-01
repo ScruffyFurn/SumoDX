@@ -340,107 +340,97 @@ void GameRenderer::FinalizeCreateGameDeviceResources()
     m_gameResourcesLoaded = true;
 }
 
-//----------------------------------------------------------------------
-
-
-
-//----------------------------------------------------------------------
-
-
 
 //----------------------------------------------------------------------
 
 void GameRenderer::Render()
 {
-    int renderingPasses = 1;
-  
-    for (int i = 0; i < renderingPasses; i++)
+    //setup the rendering pass to be completed.
+    m_d3dContext->OMSetRenderTargets(1, m_d3dRenderTargetView.GetAddressOf(), m_d3dDepthStencilView.Get());
+    m_d3dContext->ClearDepthStencilView(m_d3dDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+    m_d2dContext->SetTarget(m_d2dTargetBitmap.Get());
+
+	//start by clearing the screen
+	const float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+	m_d3dContext->ClearRenderTargetView(m_d3dRenderTargetView.Get(), ClearColor);
+
+	//Next check if we are running the game and should be rendering any 3D elements that have been loaded.
+    if (m_game != nullptr && m_gameResourcesLoaded && m_levelResourcesLoaded)
     {
-        //setup the rendering pass to be completed.
-        m_d3dContext->OMSetRenderTargets(1, m_d3dRenderTargetView.GetAddressOf(), m_d3dDepthStencilView.Get());
-        m_d3dContext->ClearDepthStencilView(m_d3dDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-        m_d2dContext->SetTarget(m_d2dTargetBitmap.Get());
+        // This section is only used after the game state has been initialized and all device
+        // resources needed for the game have been created and associated with the game objects.
 
-		const float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+        // Update variables that change once per frame.
+        ConstantBufferChangesEveryFrame constantBufferChangesEveryFrame;
+        XMStoreFloat4x4(
+            &constantBufferChangesEveryFrame.view,
+            XMMatrixTranspose(m_game->GameCamera()->View())
+            );
+        m_d3dContext->UpdateSubresource(
+            m_constantBufferChangesEveryFrame.Get(),
+            0,
+            nullptr,
+            &constantBufferChangesEveryFrame,
+            0,
+            0
+            );
 
-		// Only need to clear the background when not rendering the full 3D scene since
-		// the 3D world is a fully enclosed box and the dynamics prevents the camera from
-		// moving outside this space.
-		m_d3dContext->ClearRenderTargetView(m_d3dRenderTargetView.Get(), ClearColor);
+        // Setup the graphics pipeline. This sample uses the same InputLayout and set of
+        // constant buffers for all shaders, so they only need to be set once per frame.
 
-        if (m_game != nullptr && m_gameResourcesLoaded && m_levelResourcesLoaded)
+        m_d3dContext->IASetInputLayout(m_vertexLayout.Get());
+        m_d3dContext->VSSetConstantBuffers(0, 1, m_constantBufferNeverChanges.GetAddressOf());
+        m_d3dContext->VSSetConstantBuffers(1, 1, m_constantBufferChangeOnResize.GetAddressOf());
+        m_d3dContext->VSSetConstantBuffers(2, 1, m_constantBufferChangesEveryFrame.GetAddressOf());
+        m_d3dContext->VSSetConstantBuffers(3, 1, m_constantBufferChangesEveryPrim.GetAddressOf());
+
+        m_d3dContext->PSSetConstantBuffers(2, 1, m_constantBufferChangesEveryFrame.GetAddressOf());
+        m_d3dContext->PSSetConstantBuffers(3, 1, m_constantBufferChangesEveryPrim.GetAddressOf());
+        m_d3dContext->PSSetSamplers(0, 1, m_samplerLinear.GetAddressOf());
+
+		//now walk through the render objects list and draw each object to screen
+        auto objects = m_game->RenderObjects();
+        for (auto object = objects.begin(); object != objects.end(); object++)
         {
-            // This section is only used after the game state has been initialized and all device
-            // resources needed for the game have been created and associated with the game objects.
-
-            // Update variables that change once per frame.
-            ConstantBufferChangesEveryFrame constantBufferChangesEveryFrame;
-            XMStoreFloat4x4(
-                &constantBufferChangesEveryFrame.view,
-                XMMatrixTranspose(m_game->GameCamera()->View())
-                );
-            m_d3dContext->UpdateSubresource(
-                m_constantBufferChangesEveryFrame.Get(),
-                0,
-                nullptr,
-                &constantBufferChangesEveryFrame,
-                0,
-                0
-                );
-
-            // Setup the graphics pipeline. This sample uses the same InputLayout and set of
-            // constant buffers for all shaders, so they only need to be set once per frame.
-
-            m_d3dContext->IASetInputLayout(m_vertexLayout.Get());
-            m_d3dContext->VSSetConstantBuffers(0, 1, m_constantBufferNeverChanges.GetAddressOf());
-            m_d3dContext->VSSetConstantBuffers(1, 1, m_constantBufferChangeOnResize.GetAddressOf());
-            m_d3dContext->VSSetConstantBuffers(2, 1, m_constantBufferChangesEveryFrame.GetAddressOf());
-            m_d3dContext->VSSetConstantBuffers(3, 1, m_constantBufferChangesEveryPrim.GetAddressOf());
-
-            m_d3dContext->PSSetConstantBuffers(2, 1, m_constantBufferChangesEveryFrame.GetAddressOf());
-            m_d3dContext->PSSetConstantBuffers(3, 1, m_constantBufferChangesEveryPrim.GetAddressOf());
-            m_d3dContext->PSSetSamplers(0, 1, m_samplerLinear.GetAddressOf());
-
-            auto objects = m_game->RenderObjects();
-            for (auto object = objects.begin(); object != objects.end(); object++)
-            {
-                (*object)->Render(m_d3dContext.Get(), m_constantBufferChangesEveryPrim.Get());
-            }
-        }
-
-
-        m_d2dContext->BeginDraw();
-
-        // To handle the swapchain being pre-rotated, set the D2D transformation to include it.
-        m_d2dContext->SetTransform(m_rotationTransform2D);
-
-        if (m_game != nullptr && m_gameResourcesLoaded)
-        {
-            // This is only used after the game state has been initialized.
-            m_gameHud->Render(m_game, m_d2dContext.Get(), m_windowBounds);
-        }
-
-        if (m_gameInfoOverlay->Visible())
-        {
-            m_d2dContext->DrawBitmap(
-                m_gameInfoOverlay->Bitmap(),
-                D2D1::RectF(
-                    (m_windowBounds.Width - GameInfoOverlayConstant::Width)/2.0f,
-                    (m_windowBounds.Height - GameInfoOverlayConstant::Height)/2.0f,
-                    (m_windowBounds.Width - GameInfoOverlayConstant::Width)/2.0f + GameInfoOverlayConstant::Width,
-                    (m_windowBounds.Height - GameInfoOverlayConstant::Height)/2.0f + GameInfoOverlayConstant::Height
-                    )
-                );
-        }
-
-        // We ignore D2DERR_RECREATE_TARGET here. This error indicates that the device
-        // is lost. It will be handled during the next call to Present.
-        HRESULT hr = m_d2dContext->EndDraw();
-        if (hr != D2DERR_RECREATE_TARGET)
-        {
-            DX::ThrowIfFailed(hr);
+            (*object)->Render(m_d3dContext.Get(), m_constantBufferChangesEveryPrim.Get());
         }
     }
+
+	//Now begin the process of drawing any HUD or 2D overlay elements on top of everything else.
+    m_d2dContext->BeginDraw();
+
+    // To handle the swapchain being pre-rotated, set the D2D transformation to include it.
+    m_d2dContext->SetTransform(m_rotationTransform2D);
+
+	//Again, only attempt to render in-game HUD elements once we have everything loaded and the game is running
+    if (m_game != nullptr && m_gameResourcesLoaded)
+    {
+        // This is only used after the game state has been initialized.
+        m_gameHud->Render(m_game, m_d2dContext.Get(), m_windowBounds);
+    }
+
+	//Finally, draw our menus/pop-ups on top of everything else.
+    if (m_gameInfoOverlay->Visible())
+    {
+        m_d2dContext->DrawBitmap(
+            m_gameInfoOverlay->Bitmap(),
+            D2D1::RectF(
+                (m_windowBounds.Width - GameInfoOverlayConstant::Width)/2.0f,
+                (m_windowBounds.Height - GameInfoOverlayConstant::Height)/2.0f,
+                (m_windowBounds.Width - GameInfoOverlayConstant::Width)/2.0f + GameInfoOverlayConstant::Width,
+                (m_windowBounds.Height - GameInfoOverlayConstant::Height)/2.0f + GameInfoOverlayConstant::Height
+                )
+            );
+    }
+
+    // We ignore D2DERR_RECREATE_TARGET here. This error indicates that the device
+    // is lost. It will be handled during the next call to Present.
+    HRESULT hr = m_d2dContext->EndDraw();
+    if (hr != D2DERR_RECREATE_TARGET)
+    {
+        DX::ThrowIfFailed(hr);
+    }
+    
     Present();
 }
 
