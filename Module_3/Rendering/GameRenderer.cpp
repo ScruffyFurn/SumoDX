@@ -9,7 +9,6 @@
 #include "../Utilities/DirectXSample.h"
 #include "../Rendering/GameRenderer.h"
 #include "../Rendering/ConstantBuffers.h"
-#include "../Rendering/TargetTexture.h"
 #include "../Utilities/BasicLoader.h"
 #include "../Meshes/SumoMesh.h"
 #include "../Meshes/CylinderMesh.h"
@@ -234,18 +233,6 @@ void GameRenderer::FinalizeCreateGameDeviceResources()
     constantBufferNeverChanges.lightColor = XMFLOAT4(0.25f, 0.25f, 0.25f, 1.0f);
     m_d3dContext->UpdateSubresource(m_constantBufferNeverChanges.Get(), 0, nullptr, &constantBufferNeverChanges, 0, 0);
 
-    // For the targets, there are two unique generated textures.
-    // Each texture image includes the number of the texture.
-    // Make sure the 2D rendering is occurring on the same thread
-    // as the main rendering.
-
-    TargetTexture^ textureGenerator = ref new TargetTexture(
-        m_d3dDevice.Get(),
-        m_d2dFactory.Get(),
-        m_dwriteFactory.Get(),
-        m_d2dContext.Get()
-        );
-	
 	Material^ playerMaterial = ref new Material(
 		XMFLOAT4(0.8f, 0.8f, 0.8f, .5f),
 		XMFLOAT4(1.0f, 1.0f, 1.0f, .5f),

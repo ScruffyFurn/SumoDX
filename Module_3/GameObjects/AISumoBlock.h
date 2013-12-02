@@ -10,12 +10,12 @@ internal:
 	AISumoBlock(DirectX::XMFLOAT3 position,	SumoBlock^ target,	GameConstants::Behavior aiBehavior);
 
 	void Behavior(GameConstants::Behavior newBehavior);
-	void DetermineAIActions(float deltaTime);
+	void DetermineAIAction(float deltaTime);
 
 private:
 	
 	GameConstants::Behavior m_behavior;
-	int m_choice;
+	GameConstants::ManeuverState m_choice;
 	float m_delay;
 	
 };

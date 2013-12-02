@@ -284,7 +284,6 @@ void DirectXApp::Load(
                 // device context can ONLY be accessed on a single thread.
 
                // Place your finilize level loading call here;
-                m_game->SetCurrentLevelToSavedState();
                 m_updateState = UpdateEngineState::ResourcesLoaded;
 
             }, task_continuation_context::use_current());
@@ -755,12 +754,7 @@ void DirectXApp::SetGameInfoOverlay(GameInfoOverlayState state)
         break;
 
     case GameInfoOverlayState::GameStart:
-        m_renderer->InfoOverlay()->SetLevelStart(
-           // m_game->LevelCompleted() + 1,
-           // m_game->CurrentLevel()->Objective(),
-           // m_game->CurrentLevel()->TimeLimit(),
-          //  m_game->BonusTime()
-            );
+        m_renderer->InfoOverlay()->SetLevelStart( );
         break;
 
     case GameInfoOverlayState::GameOverWon:

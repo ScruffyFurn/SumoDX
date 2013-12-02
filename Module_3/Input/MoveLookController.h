@@ -36,7 +36,7 @@
 // update the controller for the Look Control.
 //
 // The touch portion of the MoveLookController divides the window area of the app
-// into three distinct regions:
+// into two distinct regions:
 //     MoveRect - the rectangle of the screen where touch input is converted into
 //         a virtual joystick where the vertical motion will be translated into
 //         forward/backward position motion and horizontal motion will be translated

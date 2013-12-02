@@ -67,12 +67,12 @@ internal:
     void PauseGame();
     void ContinueGame();
     GameState RunGame();
-    void SetCurrentLevelToSavedState();
 
     void OnSuspending();
     void OnResuming();
 
     bool IsActivePlay()                         { return m_timer->Active(); }
+	int RoundTime()								{ return m_timer->PlayingTime(); }
     
     bool GameActive()                           { return m_gameActive; }
     
@@ -103,8 +103,6 @@ private:
 
     GameTimer^                                  m_timer;
     bool                                        m_gameActive;
-	float										m_difficulty;
-    float                                       m_levelDuration;
 
     SumoBlock^                                  m_player;
 	AISumoBlock^								m_enemy;

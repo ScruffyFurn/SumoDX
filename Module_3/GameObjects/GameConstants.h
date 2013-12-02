@@ -53,5 +53,6 @@ namespace GameConstants
         static const float MinAdjustment        = 0.2f;     // The minimum volume adjustment based on contact velocity.
     }
 
-	enum Behavior{ Easy = 0, Angry, Smart, Max };
+	enum Behavior{ Easy = 0, Angry, Smart};
+	enum ManeuverState{ Walk = 0, Dodge, Push};
 };

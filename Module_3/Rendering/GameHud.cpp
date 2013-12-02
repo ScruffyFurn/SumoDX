@@ -260,10 +260,11 @@ void GameHud::Render(
         // This section is only used after the game state has been initialized.
         static const int bufferLength = 256;
         static char16 wsbuffer[bufferLength];
-        int length = swprintf_s(
-            wsbuffer,
-            bufferLength,
-            L"HUD TODO"
+		int length = swprintf_s(
+			wsbuffer,
+			bufferLength,
+			L"Round Time: %d",
+			game->RoundTime()
             );
 
         d2dContext->DrawText(

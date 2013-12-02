@@ -50,7 +50,7 @@ void SumoDX::Initialize(
     
 
     m_savedState = ref new PersistentState();
-    m_savedState->Initialize(ApplicationData::Current->LocalSettings->Values, "Game");
+    m_savedState->Initialize(ApplicationData::Current->LocalSettings->Values, "SumoGame");
 
     m_timer = ref new GameTimer();
 	srand(time(NULL));
@@ -70,9 +70,6 @@ void SumoDX::Initialize(
 
 	//tell the player about their new opponent
 	m_player->Target(m_enemy);
-
-	//set starting difficulty
-	m_difficulty = 0;// rand() % 3;
 
 	//floor model
 	Cylinder^ cylinder;
@@ -118,6 +115,7 @@ void SumoDX::LoadGame()
 	//reset player and enemy
 	m_player->Position(XMFLOAT3(-3.0f, 0.5f, 0.0f));
 	m_enemy->Position(XMFLOAT3(3.0f, 0.5f, 0.0f));
+	m_enemy->Behavior(static_cast<GameConstants::Behavior>(rand() % 3));
 
 	//reset camera
 	m_camera->SetViewParams(
@@ -129,35 +127,22 @@ void SumoDX::LoadGame()
     m_controller->Yaw(m_camera->Yaw());
    
 	//reset other things
-	m_levelDuration = 0;
 	m_gameActive = false;
     m_timer->Reset();
+
+	//reset the save game
+	SaveState();
 }
 
 
 //----------------------------------------------------------------------
-
-void SumoDX::SetCurrentLevelToSavedState()
-{
-	if (m_gameActive)
-	{
-
-			// Middle of a level so restart where left off.
-			m_levelDuration = m_savedState->LoadSingle(":LevelDuration", 0.0f);
-
-			m_timer->Reset();
-			m_timer->PlayingTime(m_savedState->LoadSingle(":LevelPlayingTime", 0.0f));
-
-	}
-}
-
 
 
 void SumoDX::StartLevel()
 {
     m_timer->Reset();
     m_timer->Start();
-   
+	m_gameActive = true;
     m_controller->Active(true);
 }
 
@@ -247,16 +232,18 @@ void SumoDX::UpdateDynamics()
 		m_player->Position(m_player->VectorPosition() + m_player->VectorVelocity() * deltaTime);
 
 		//AI Update
-		m_enemy->DetermineAIActions(deltaTime);
+		m_enemy->DetermineAIAction(deltaTime);
 
 		//Check for player/enemy colision
 		float xDelta = m_enemy->Position().x - m_player->Position().x;
 		float zDelta = m_enemy->Position().z - m_player->Position().z;
+
+		//since each of our sumo's is 1 unit wide if we subtract one from their position deltas
 		float overlap = sqrt(xDelta * xDelta + zDelta * zDelta) - 1;
 		XMVECTOR playerToEnemy = m_enemy->VectorPosition() - m_player->VectorPosition();
 
-		//since each of our sumo's is 1 unit wide if we subtract one from their position deltas
-		// then we get their overlap value as a negative number and a possitive number means no contact.
+		
+		// then if we get their overlap value as a negative number a contact has occured.
 		if (overlap < 0)
 		{
 			m_player->Position(m_player->VectorPosition() + playerToEnemy * overlap * 0.5f);
@@ -271,7 +258,7 @@ void SumoDX::SaveState()
 {
     // Save basic state of the game.
     m_savedState->SaveBool(":GameActive", m_gameActive);
-   
+	m_savedState->SaveSingle(":LevelPlayingTime", m_timer->PlayingTime());
     m_savedState->SaveXMFLOAT3(":PlayerPosition", m_player->Position());
     m_savedState->SaveXMFLOAT3(":EnemyPosition", m_enemy->Position());
 
@@ -286,18 +273,10 @@ void SumoDX::LoadState()
     if (m_gameActive)
     {
         // Loading from the last known state means the game wasn't finished when it was last played,
-        // so set the current level.
-		//m_difficulty =
-		//m_levelDuration = 
-
         // Reload the current player and enemy position.
 		m_player->Position(m_savedState->LoadXMFLOAT3(":PlayerPosition", XMFLOAT3(0.0f, 0.0f, 0.0f)));
 	    m_enemy->Position(m_savedState->LoadXMFLOAT3(":EnemyPosition", XMFLOAT3(0.0f, 0.0f, 0.0f)));
-    }
-    else
-    {
-		m_difficulty = 0;
-		//m_levelDuration = 0;
+		m_timer->PlayingTime(m_savedState->LoadSingle(":LevelPlayingTime", 0.0f));
     }
 }
 
@@ -305,11 +284,11 @@ void SumoDX::LoadState()
 
 void SumoDX::SaveHighScore()
 {
-	int currentBest = m_savedState->LoadInt32(":HighScore:LevelCompleted", 0);
+	int currentBest = m_savedState->LoadSingle(":HighScore:LevelCompleted", 0);
 
 	if (currentBest==NULL || currentBest > m_topScore.bestRoundTime)
 	{
-		m_savedState->SaveInt32(":HighScore:LevelCompleted", m_topScore.bestRoundTime);
+		m_savedState->LoadSingle(":HighScore:LevelCompleted", m_topScore.bestRoundTime);
 	}
 }
 
@@ -317,7 +296,7 @@ void SumoDX::SaveHighScore()
 
 void SumoDX::LoadHighScore()
 {
-    m_topScore.bestRoundTime = m_savedState->LoadInt32(":HighScore:LevelCompleted", 0);
+	m_topScore.bestRoundTime = m_savedState->LoadSingle(":HighScore:LevelCompleted", 0);
 }
 
 //----------------------------------------------------------------------

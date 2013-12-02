@@ -22,9 +22,9 @@
 //         The possible outcomes are:
 //             LoadGame - The player is ready to start a new game and has acknowledged the status
 //                 information provided about the previous state.
-//             PlayLevel - The player is ready to play the next level.  The level has already been
+//             Play - The player is ready to play the next level.  The level has already been
 //                 loaded so active game play will start.
-//             ContinueLevel - The player is ready to continue playing the current level.  Part of the
+//             Continue - The player is ready to continue playing the current level.  Part of the
 //                 current level has already been played.
 //     Dynamics - the game is active play mode.
 //     TooSmall - the game is currently in a size on the screen where it isn't big enough to play the game.
