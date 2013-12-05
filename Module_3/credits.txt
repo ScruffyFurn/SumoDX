@@ -2,4 +2,13 @@
 MICROSOFT CORPORATION CREDITS
 =============================
 
-To Do!!
+THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
+ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
+PARTICULAR PURPOSE.
+
+Edited and modified for use in an MVA demonstration about Beginning C++/DirectX Game Development by:
+	Bryan Griffiths
+	Mickey MacDonald
+
+Copyright (c) Microsoft Corporation. All rights reserved

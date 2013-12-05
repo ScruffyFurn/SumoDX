@@ -13,11 +13,9 @@
 //     MoveLookController - for handling all input to control player/camera/cursor movement.
 //     GameRenderer - for handling all graphics presentation.
 //     Camera - for handling view projections.
-//     Audio - for handling sound output.
 //     m_renderObjects <GameObject> - is the list of all objects in the scene that may be rendered.
 
 #include "../GameObjects/GameConstants.h"
-#include "../Audio/Audio.h"
 #include "../GameObjects/Camera.h"
 #include "../GameObjects/GameObject.h"
 #include "../Utilities/GameTimer.h"
@@ -94,10 +92,6 @@ private:
     GameRenderer^                               m_renderer;
     Camera^                                     m_camera;
 
-    Audio^                                      m_audioController;
-
-  
-
     HighScoreEntry                              m_topScore;
     PersistentState^                            m_savedState;
 
@@ -107,8 +101,5 @@ private:
     SumoBlock^                                  m_player;
 	AISumoBlock^								m_enemy;
     std::vector<GameObject^>                    m_renderObjects;     // List of all objects to be rendered.
-
-    DirectX::XMFLOAT3                           m_minBound;
-    DirectX::XMFLOAT3                           m_maxBound;
 };
 

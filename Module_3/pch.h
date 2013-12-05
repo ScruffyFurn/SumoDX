@@ -15,9 +15,6 @@
 #include <wincodec.h>
 #include <DirectXMath.h>
 
-#include <xaudio2.h>
-#include <xaudio2fx.h>
-
 #include <mmreg.h>
 #include <mfidl.h>
 #include <mfapi.h>

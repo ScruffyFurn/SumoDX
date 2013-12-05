@@ -72,6 +72,8 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\MeshContentTask.props" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\ShaderGraphContentTask.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -188,26 +190,20 @@
     <ClCompile Include="Utilities\PersistentState.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Audio\Audio.h" />
     <ClInclude Include="GameObjects\Camera.h" />
     <ClInclude Include="Rendering\ConstantBuffers.h" />
     <ClInclude Include="GameObjects\GameConstants.h" />
     <ClInclude Include="GameObjects\GameObject.h" />
     <ClInclude Include="Utilities\GameTimer.h" />
     <ClInclude Include="Rendering\Material.h" />
-    <ClInclude Include="Audio\MediaReader.h" />
     <ClInclude Include="Input\MoveLookController.h" />
-    <ClInclude Include="Audio\SoundEffect.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Audio\Audio.cpp" />
     <ClCompile Include="GameObjects\Camera.cpp" />
     <ClCompile Include="GameObjects\GameObject.cpp" />
     <ClCompile Include="Utilities\GameTimer.cpp" />
     <ClCompile Include="Rendering\Material.cpp" />
-    <ClCompile Include="Audio\MediaReader.cpp" />
     <ClCompile Include="Input\MoveLookController.cpp" />
-    <ClCompile Include="Audio\SoundEffect.cpp" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
@@ -257,6 +253,9 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
+    <MeshContentTask Include="Meshes\SumoBlue.fbx">
+      <FileType>Document</FileType>
+    </MeshContentTask>
     <None Include="Resources\seafloor.dds">
       <DeploymentContent>true</DeploymentContent>
     </None>
@@ -329,5 +328,7 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\MeshContentTask.targets" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\ShaderGraphContentTask.targets" />
   </ImportGroup>
 </Project>

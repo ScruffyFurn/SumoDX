@@ -9,8 +9,6 @@
 #include "../Rendering/GameRenderer.h"
 #include <time.h>
 #include "../Utilities/DirectXSample.h"
-
-#include "../Audio/MediaReader.h"
 #include "../GameObjects/Cylinder.h"
 
 using namespace concurrency;
@@ -42,9 +40,6 @@ void SumoDX::Initialize(
 
     m_controller = controller;
     m_renderer = renderer;
-
-    m_audioController = ref new Audio;
-    m_audioController->CreateDeviceIndependentResources();
 
     m_renderObjects = std::vector<GameObject^>();
     
@@ -86,18 +81,6 @@ void SumoDX::Initialize(
 
     m_controller->Pitch(m_camera->Pitch());
     m_controller->Yaw(m_camera->Yaw());
-
-    // Min and max Bound are defining the world space of the game.
-    // All camera motion and dynamics are confined to this space.
-    m_minBound = XMFLOAT3(-4.0f, -3.0f, -6.0f);
-    m_maxBound = XMFLOAT3(4.0f, 3.0f, 6.0f);
-
-    MediaReader^ mediaReader = ref new MediaReader;
-    auto targetHitSound = mediaReader->LoadMedia("/Resources/hit.wav");
-
-    // Instantiate a set of spheres to be used as ammunition for the game
-    // and set the material properties of the spheres.
-    auto ammoHitSound = mediaReader->LoadMedia("/Resources/bounce.wav");
 
     // Load the top score from disk if it exists.
     LoadHighScore();
@@ -202,14 +185,14 @@ GameState SumoDX::RunGame()
 
 void SumoDX::OnSuspending()
 {
-    m_audioController->SuspendAudio();
+   
 }
 
 //----------------------------------------------------------------------
 
 void SumoDX::OnResuming()
 {
-    m_audioController->ResumeAudio();
+  
 }
 
 //----------------------------------------------------------------------
