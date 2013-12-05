@@ -253,9 +253,6 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <MeshContentTask Include="Meshes\SumoBlue.fbx">
-      <FileType>Document</FileType>
-    </MeshContentTask>
     <None Include="Resources\seafloor.dds">
       <DeploymentContent>true</DeploymentContent>
     </None>
